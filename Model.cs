@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using BIS.Core.Streams;
+using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Security;
-using System.Text;
-using System.Threading.Tasks;
-using lzo.net;
 
 namespace ModelPropertyChecker
 {
@@ -17,7 +9,7 @@ namespace ModelPropertyChecker
     {
         private Dictionary<string, string> properties = new Dictionary<string, string>();
 
-        public void loadFromODOL(BinaryReader reader)
+        public void loadFromODOL(BinaryReaderEx reader)
         {
             var numProxies = reader.ReadUInt32();
             for (int i = 0; i < numProxies; i++)
@@ -48,17 +40,17 @@ namespace ModelPropertyChecker
 
             for (int i = 0; i < numTextures; i++)
             {
-                while (reader.ReadByte() != 0) ; //skip name
+                var texName = reader.ReadAsciiz();
             }
 
             var numMaterials = reader.ReadUInt32();
 
             for (int i = 0; i < numMaterials; i++)
             {
-                while (reader.ReadByte() != 0) ; //skip name
+                var name1 = reader.ReadAsciiz();
 
                 reader.BaseStream.Seek(4+ 4*4*6 + 4 +8+8, SeekOrigin.Current);
-                while (reader.ReadByte() != 0) ; //skip name
+                var name2 = reader.ReadAsciiz();
                 reader.BaseStream.Seek(8, SeekOrigin.Current);
 
                 var numTex = reader.ReadUInt32();
@@ -66,19 +58,24 @@ namespace ModelPropertyChecker
                 for (int i2 = 0; i2 < numTex; i2++)
                 {
                     reader.ReadUInt32();
-                    while (reader.ReadByte() != 0) ; //skip name
+                    var name3 = reader.ReadAsciiz();
                     reader.ReadUInt32();
                     reader.ReadByte();
                 }
                 reader.BaseStream.Seek((4+ 4*12)*numTrans, SeekOrigin.Current);
 
                 reader.ReadUInt32();//#TODO skip TI stage if version <11
-                while (reader.ReadByte() != 0) ; //skip name
+                var nameTI = reader.ReadAsciiz();
                 reader.ReadUInt32();
                 reader.ReadByte();
             }
 
-            reader.BaseStream.Seek(8, SeekOrigin.Current); //ptv vtp
+            var t1 = reader.ReadCompressedIntArray();
+            var t2 = reader.ReadCompressedIntArray();
+
+
+
+            //reader.BaseStream.Seek(8, SeekOrigin.Current); //ptv vtp
 
             var numFaces2 = reader.ReadUInt32();
             var faceSize = reader.ReadUInt32();
@@ -103,7 +100,7 @@ namespace ModelPropertyChecker
                 var matIndex = reader.ReadInt32();
                 if (matIndex == -1)
                 {
-                    while (reader.ReadByte() != 0) ; //skip name
+                    var matname = reader.ReadAsciiz();
                 }
                 reader.BaseStream.Seek(4 + 8+4, SeekOrigin.Current);
             }
@@ -111,73 +108,55 @@ namespace ModelPropertyChecker
             var numSelections = reader.ReadUInt32();
             for (int i = 0; i < numSelections; i++)
             {
-                string key = "";
-                char ch;
-                while ((ch = (char)reader.ReadByte()) != 0)
-                    key += ch;
-                var numFaces = reader.ReadUInt32();
-                if (numFaces != 0)
-                {
-                    //var isCompressed = reader.ReadByte();
-                    //if (isCompressed != 0)
-                    //{
-                        using (var decompressed = new LzoStream(reader.BaseStream, CompressionMode.Decompress, true))
-                        {
-                            byte[] buffer = new byte[numFaces * 4];
-                            decompressed.Read(buffer, 0, (int)numFaces * 4);
-                        }
-                    //}
-                    //else
-                    //{
-                    //    reader.BaseStream.Seek((4) * numFaces, SeekOrigin.Current);
-                    //} 
+                string selectionName = reader.ReadAsciiz();
 
-              
+                int nElements = reader.ReadInt32();
+                if (nElements != 0)
+                {
+                    var b = reader.ReadByte();//#TODO do this properly. Search in binary for `"Error decompressing block %d..%d of %s"`
+                    var expectedDataSize = (uint)(nElements * 4);
+                    var stream = reader.ReadCompressed(expectedDataSize, b == 2);
                 }
 
-                var numWeights1 = reader.ReadUInt32();
-                if (numWeights1 != 0)
+                var always0 = reader.ReadUInt32();
+                if (always0 != 0)
+                    throw new ArgumentOutOfRangeException();
+
+
+                var isSectional = reader.ReadByte();
+
+                nElements = reader.ReadInt32(); //sections
+                if (nElements != 0)
                 {
-                    reader.ReadByte();
-                    reader.BaseStream.Seek(numWeights1, SeekOrigin.Current);
+                    var b = reader.ReadByte();
+                    var expectedDataSize = (uint)(nElements * 4);
+                    var stream = reader.ReadCompressed(expectedDataSize, b==2);
                 }
-                reader.ReadByte();
-
-
-                var numSections2 = reader.ReadUInt32();
-                if (numSections2 != 0)
+                nElements = reader.ReadInt32(); //verticies
+                if (nElements != 0)
                 {
-                    reader.ReadByte();
-                    reader.BaseStream.Seek((4) * numSections2, SeekOrigin.Current);
-                }
-
-                var numVert = reader.ReadUInt32();
-                if (numVert != 0)
-                {
-                    reader.ReadByte();
-                    reader.BaseStream.Seek((4) * numVert, SeekOrigin.Current);
-                }
-
-                var numWeights = reader.ReadUInt32();
-                if (numWeights != 0)
-                {
-                    reader.ReadByte();
-                    reader.BaseStream.Seek(numWeights, SeekOrigin.Current);
+                    var b = reader.ReadByte();
+                    var expectedDataSize = (uint)(nElements*4);
+                    var stream = reader.ReadCompressed(expectedDataSize, b == 2);
                 }
 
+
+                nElements = reader.ReadInt32();//weights
+                if (nElements != 0)
+                {
+                    var b = reader.ReadByte();
+                    var expectedDataSize = (uint)(nElements);
+                    var stream = reader.ReadCompressed(expectedDataSize, b == 2);
+                }
+               
             }
 
 
             var numProperties = reader.ReadUInt32();
             for (int i = 0; i < numProperties; i++)
             {
-                string key = "";
-                char ch;
-                while ((ch = (char)reader.ReadByte()) != 0)
-                    key += ch;
-                string value = "";
-                while ((ch = (char)reader.ReadByte()) != 0)
-                    value += ch;
+                string key = reader.ReadAsciiz();
+                string value = reader.ReadAsciiz();
                 properties.Add(key,value);
             }
 
@@ -254,7 +233,7 @@ namespace ModelPropertyChecker
 
         }
 
-        public float loadFromMLOD(BinaryReader reader)
+        public float loadFromMLOD(BinaryReaderEx reader)
         {
             reader.ReadUInt32(); //P3DM header
 
@@ -323,13 +302,15 @@ namespace ModelPropertyChecker
         private Dictionary<float, LOD> lods = new Dictionary<float, LOD>();
         private uint numLods;
 
-        private void skipAnimations(BinaryReader reader)
+        private void skipAnimations(BinaryReaderEx reader)
         {
             var numAnims = reader.ReadUInt32();
-
+            uint[] animTypes = new uint[numAnims];
             for (int i = 0; i < numAnims; i++)
             {
+
                 var type = reader.ReadUInt32();
+                animTypes[i] = type;
                 while (reader.ReadByte() != 0) ; //skip name 
                 while (reader.ReadByte() != 0) ; //skip name 
                 reader.BaseStream.Seek(4*7, SeekOrigin.Current);
@@ -360,7 +341,7 @@ namespace ModelPropertyChecker
                 var numBones2 = reader.ReadUInt32();
                 for (int i2 = 0; i2 < numBones2; i2++)
                 {
-                    reader.ReadUInt32();
+                    //reader.ReadUInt32();
                     reader.BaseStream.Seek(reader.ReadUInt32() * 4, SeekOrigin.Current);
                 }
             }
@@ -370,7 +351,11 @@ namespace ModelPropertyChecker
             {
                 for (int i2 = 0; i2 < numAnims; i2++)
                 {
-                    reader.ReadUInt32();
+                    var test = reader.ReadInt32();
+
+                    if (test == -1) continue;
+                    if (animTypes[i2] == 8 || animTypes[i2] == 9) continue;
+            
                     reader.BaseStream.Seek(4*3*2, SeekOrigin.Current);
                 }
             }
@@ -380,11 +365,11 @@ namespace ModelPropertyChecker
         }
 
 
-        private void loadFromODOL(BinaryReader reader)
+        private void loadFromODOL(BinaryReaderEx reader)
         {
             var version = reader.ReadUInt32();//version
             reader.ReadUInt32();
-            reader.ReadByte();
+            var muz = reader.ReadAsciiz();
             numLods = reader.ReadUInt32();
             float[] lodResolutions = new float[numLods];
             for (int i = 0; i < numLods; i++)
@@ -404,10 +389,11 @@ namespace ModelPropertyChecker
                                    + 1 + 4 + 1 + 4 + 1,
                 SeekOrigin.Current
             );
-            if (reader.ReadByte() != 0) //skeleton
-            {
-                while (reader.ReadByte() != 0) ; //skip name 
+            var skeletonName = reader.ReadAsciiz();
 
+
+            if (skeletonName.Length != 0) //skeleton
+            {
                 reader.ReadByte();
                 var numBones = reader.ReadUInt32();
 
@@ -434,8 +420,8 @@ namespace ModelPropertyChecker
                 
                 +4+1, SeekOrigin.Current); //#TODO only if >72
 
-            while (reader.ReadByte() != 0) ; //skip name 
-            while (reader.ReadByte() != 0) ; //skip name 
+            var name1 = reader.ReadAsciiz();
+            var name2 = reader.ReadAsciiz();
             reader.ReadByte();
             var numUnused = reader.ReadUInt32();
             if (numUnused != 0)
@@ -479,7 +465,7 @@ namespace ModelPropertyChecker
 
         }
 
-        private void loadFromMLOD(BinaryReader reader)
+        private void loadFromMLOD(BinaryReaderEx reader)
         {
             reader.ReadUInt32();
             numLods = reader.ReadUInt32();
@@ -495,7 +481,7 @@ namespace ModelPropertyChecker
 
         }
 
-        public void load(BinaryReader reader)
+        public void load(BinaryReaderEx reader)
         {
             string type = "";
             type += (char)reader.ReadByte();

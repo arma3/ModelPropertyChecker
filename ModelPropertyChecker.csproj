@@ -95,5 +95,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="bis-file-formats\BIS.Core\BIS.Core.csproj">
+      <Project>{f1f1a5ce-a3ff-4715-acfa-57c29b6622bd}</Project>
+      <Name>BIS.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
