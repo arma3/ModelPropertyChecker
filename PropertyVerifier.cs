@@ -99,12 +99,14 @@ namespace ModelPropertyChecker
 
     class PropertyVerifier
     {
-        private static List<PropertyCondition> CreateBooleanCondition()
+        private static List<PropertyCondition> CreateBooleanCondition(bool forceGeometryLod = false)
         {
             return new List<PropertyCondition>
             {
+                new PropVerify_IsNotEmpty(),
                 new PropVerify_IsNumber(),
-                new PropVerify_IsBoolean()
+                new PropVerify_IsBoolean(),
+                forceGeometryLod ? new PropVerify_IsOnGeoLod() : null
             };
         }
 
@@ -116,28 +118,30 @@ namespace ModelPropertyChecker
         {
             {
                 "aicovers",
-                CreateBooleanCondition()
+                CreateBooleanCondition(true)
             },
             {
                 "autocenter",
-                CreateBooleanCondition()
+                CreateBooleanCondition(true)
             },
             {
                 "buoyancy",
-                CreateBooleanCondition()
+                CreateBooleanCondition(true)
             },
             {
                 "canbeoccluded",
-                CreateBooleanCondition()
+                CreateBooleanCondition(true)
             },
             {
                 "canocclude",
-                CreateBooleanCondition()
+                CreateBooleanCondition(true)
             },
             {
                 "class",
                 new List<PropertyCondition>
                 {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsOnGeoLod(),
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
@@ -167,6 +171,8 @@ namespace ModelPropertyChecker
                 "damage",
                 new List<PropertyCondition>
                 {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsOnGeoLod(),
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
@@ -183,6 +189,8 @@ namespace ModelPropertyChecker
                 "dammage", //#TODO add a warning that this should be renamed to damage
                 new List<PropertyCondition>
                 {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsOnGeoLod(),
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
@@ -193,6 +201,15 @@ namespace ModelPropertyChecker
                             "wall",
                             "wreck"
                         })
+                }
+            },
+            {
+                "drawimportance",
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsOnGeoLod(),
+                    new PropVerify_IsNumber()
                 }
             },
 
