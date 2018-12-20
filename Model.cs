@@ -5,9 +5,56 @@ using System.IO;
 
 namespace ModelPropertyChecker
 {
-    class LOD
+    public struct LODResolution : IComparable
     {
-        private Dictionary<string, string> properties = new Dictionary<string, string>();
+        private readonly float _value;
+
+        public LODResolution(float value)
+        {
+            _value = value;
+        }
+
+        public static implicit operator LODResolution(float value)
+        {
+            return new LODResolution(value);
+        }
+
+        public static explicit operator float(LODResolution value)
+        {
+            return value._value;
+        }
+
+
+        public int CompareTo(object obj)
+        {
+            switch (obj)
+            {
+                case null:
+                    return 1;
+                case LODResolution otherRes:
+                    return Math.Abs(_value - otherRes._value) < otherRes._value * 1e-3f
+                        ? 0 //Equals
+                        : _value < otherRes._value
+                            ? -1 //Smaller than
+                            : 1; //Bigger than
+                case float otherResFloat:
+                    return Math.Abs(_value - otherResFloat) < otherResFloat * 1e-3f
+                        ? 0 //Equals
+                        : _value < otherResFloat
+                            ? -1 //Smaller than
+                            : 1; //Bigger than
+                default:
+                    throw new ArgumentException("Object is not a Resolution");
+            }
+        }
+    }
+
+
+    public class LOD
+    {
+        public Dictionary<string, string> properties = new Dictionary<string, string>();
+        public LODResolution resolution = 0;
+
 
         public void loadFromODOL(BinaryReaderEx reader)
         {
@@ -299,7 +346,7 @@ namespace ModelPropertyChecker
     public class Model
     {
 
-        private Dictionary<float, LOD> lods = new Dictionary<float, LOD>();
+        public Dictionary<LODResolution, LOD> lods = new Dictionary<LODResolution, LOD>();
         private uint numLods;
 
         private void skipAnimations(BinaryReaderEx reader)
@@ -456,6 +503,7 @@ namespace ModelPropertyChecker
                 reader.BaseStream.Seek(lodOffs[i], SeekOrigin.Begin);
                 LOD x = new LOD();
                 x.loadFromODOL(reader);
+                x.resolution = lodResolutions[i];
                 lods.Add(lodResolutions[i],x);
             }
        
@@ -473,6 +521,7 @@ namespace ModelPropertyChecker
             {
                 LOD x = new LOD();
                 var resolution = x.loadFromMLOD(reader);
+                x.resolution = resolution;
                 lods.Add(resolution, x);
             }
 
