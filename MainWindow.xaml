@@ -4,9 +4,80 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ModelPropertyChecker"
+        xmlns:generic="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="MainWindow" Height="450" Width="800"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        >
+
+    <StackPanel Orientation="Horizontal">
+        <TreeView HorizontalAlignment="Left" Width="228"  SelectedItemChanged="SelectionChanged">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate ItemsSource="{Binding lods.Values}" DataType="{x:Type local:Model}" x:Key="DataTemplate1">
+                    <StackPanel Orientation="Horizontal">
+                        <Label>
+                            <Label.Style>
+                                <Style TargetType="Label">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
+                                            <Setter Property="Content" Value="❌" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
+                                            <Setter Property="Content" Value="⚠" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Label.Style>
+                        </Label>
+                        <Label Content="{Binding subPath, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <HierarchicalDataTemplate.ItemTemplate>
+                        <DataTemplate DataType="local:LOD">
+                            <StackPanel Orientation="Horizontal">
+                                <Label>
+                                    <Label.Style>
+                                        <Style TargetType="Label">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
+                                                    <Setter Property="Content" Value="❌" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
+                                                    <Setter Property="Content" Value="⚠" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Label.Style>
+                                </Label>
+                                <Label Content="{Binding resolution}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </HierarchicalDataTemplate.ItemTemplate>
+
+
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
+            <Button Content="Load Models" VerticalAlignment="Top" Width="75" Click="ButtonBase_OnClick"/>
+
+        </TreeView>
+        <GridSplitter HorizontalAlignment="Stretch" Width="5"/>
+        <Grid>
+            <ListBox Name="problemList" ItemsSource="{Binding Path=currentErrors, PresentationTraceSources.TraceLevel=High, UpdateSourceTrigger=PropertyChanged}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="local:PropertyException">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{Binding propertyName, StringFormat={}{0}°C}"/>
+                            <Label Content="{Binding Message2, StringFormat={}{0}°C}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+
+
+
+
+    </StackPanel>
 </Window>

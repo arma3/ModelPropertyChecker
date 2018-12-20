@@ -5,7 +5,7 @@ using System.IO;
 
 namespace ModelPropertyChecker
 {
-    public struct LODResolution : IComparable, IComparable<float>, IEquatable<float>
+    public struct LODResolution : IComparable, IComparable<float>, IEquatable<float>, IFormattable
     {
         private readonly float _value;
 
@@ -69,8 +69,16 @@ namespace ModelPropertyChecker
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is LODResolution other && Equals(other);
+            if (obj is null) return false;
+            return 
+                obj is LODResolution other && Equals(other)
+                ||
+                obj is float otherFl && Equals(otherFl)
+                ||
+                obj is double otherDbl && Equals((float) otherDbl)
+                ||
+                obj is int otherInt && Equals(otherInt)
+                ;
         }
 
         public static bool operator ==(LODResolution res1, LODResolution res2)
@@ -98,13 +106,76 @@ namespace ModelPropertyChecker
         {
             return _value.GetHashCode();
         }
+
+        public string ToString(string format, IFormatProvider formatProvider)
+        {
+            if (Equals(1e13)) return "geometry";
+            if (Equals(2e13)) return "geometrySimple";
+            if (Equals(3e13)) return "geometryPhysOld";
+            if (Equals(4e13)) return "geometryPhys";
+            if (Equals(1e15)) return "memory";
+            if (Equals(2e15)) return "landContact";
+            if (Equals(3e15)) return "roadway";
+            if (Equals(4e15)) return "paths";
+            if (Equals(5e15)) return "hitpoints";
+            if (Equals(6e15)) return "geometryView";
+            if (Equals(7e15)) return "geometryFire";
+            if (Equals(8e15)) return "geometryViewCargo";
+            if (Equals(13e15)) return "geometryViewPilot";
+            if (Equals(15e15)) return "geometryViewGunner";
+            if (Equals(21e15)) return "wreck";
+            if (Equals(1000)) return "viewGunner";
+            if (Equals(1100)) return "viewPilot";
+            if (Equals(1200)) return "viewCargo";
+
+
+            if (Equals(10000) && _value < 11000)
+                return $"ShadowVolume {_value - 10000}";
+            if (Equals(11000) && _value < 12000)
+                return $"ShadowBuffer {_value - 11000}";
+
+            return $"{_value}";
+        }
     }
 
 
     public class LOD
     {
-        public Dictionary<string, string> properties = new Dictionary<string, string>();
-        public LODResolution resolution = 0;
+        public readonly Dictionary<string, string> properties = new Dictionary<string, string>();
+        public LODResolution resolution { get; set; } = 0;
+        public List<PropertyException> propertyExceptions { get; set; } //Set by PropertyVerifier
+
+
+        public string resolutionText => resolution.ToString();
+
+        public bool hasErrors
+        {
+            get
+            {
+                if (propertyExceptions != null)
+                    foreach (var exception in propertyExceptions)
+                    {
+                        if (exception.isError) return true;
+                    }
+
+                return false;
+            }
+        }
+
+        public bool hasWarnings
+        {
+            get
+            {
+                if (propertyExceptions != null)
+                    foreach (var exception in propertyExceptions)
+                    {
+                        if (!exception.isError) return true;
+                    }
+
+                return false;
+            }
+        }
+
 
 
         public void loadFromODOL(BinaryReaderEx reader)
@@ -333,11 +404,11 @@ namespace ModelPropertyChecker
 
         public float loadFromMLOD(BinaryReaderEx reader)
         {
-            reader.ReadUInt32(); //P3DM header
+            var head = reader.ReadAscii(4); //P3DM header
 
 
-            reader.ReadInt32();
-            reader.ReadInt32(); //version
+            var appid= reader.ReadInt32();
+            var vers = reader.ReadInt32(); //version
 
             var numPoints = reader.ReadUInt32();
             var numNormals = reader.ReadUInt32();
@@ -353,11 +424,7 @@ namespace ModelPropertyChecker
                 while (reader.ReadByte() != 0) ; //material
             }
 
-            string tagTex = "";
-            tagTex += (char)reader.ReadByte();
-            tagTex += (char)reader.ReadByte();
-            tagTex += (char)reader.ReadByte();
-            tagTex += (char)reader.ReadByte();
+            string tagTex = reader.ReadAscii(4);
             if (tagTex != "TAGG")
                 throw new NotImplementedException(); //#TODO
             string tagName = "";
@@ -365,36 +432,67 @@ namespace ModelPropertyChecker
             {
                 reader.ReadByte();
 
-                tagName = "";
-                char ch;
-                while ((ch = (char)reader.ReadByte()) != 0)
-                    tagName += ch;
+                tagName = reader.ReadAsciiz();
                 var tagLen = reader.ReadUInt32();
 
                 if (tagName == "#Property#")
                 {
-                    string key = reader.ReadAsciiz();
-                    string value = reader.ReadAsciiz();
-                    properties.Add(key.ToLower(), value);  //#TODO maybe we also want to keep a version with original casing?
+                    string key = reader.ReadAscii(64);
+                    key = key.Substring(0, key.IndexOf('\0'));
+                    string value = reader.ReadAscii(64);
+                    value = value.Substring(0, value.IndexOf('\0'));
+                    properties.Add(key.ToLower(), value); //#TODO maybe we also want to keep a version with original casing?
                 }
                 else
                 {
                     reader.BaseStream.Seek(tagLen, SeekOrigin.Current);
                 }
             }
-            while (tagName != "" && tagName != "#EndOfFile#");
+            while (tagName != "#EndOfFile#");//tagName != "" && 
 
             return reader.ReadSingle();//resolution
         }
     }
 
-
-
     public class Model
     {
 
-        public Dictionary<LODResolution, LOD> lods = new Dictionary<LODResolution, LOD>();
+        public Dictionary<LODResolution, LOD> lods { get; } = new Dictionary<LODResolution, LOD>();
         private uint numLods;
+
+
+        //These are set by ModelLoader
+        //#TODO constructor
+        public string subPath { get; set; }
+        public string totalPath { get; set; }
+
+
+        public bool hasErrors
+        {
+            get
+            {
+                foreach (var lod in lods)
+                {
+                    if (lod.Value.hasErrors) return true;
+                }
+
+                return false;
+            }
+        }
+
+        public bool hasWarnings
+        {
+            get
+            {
+                foreach (var lod in lods)
+                {
+                    if (lod.Value.hasWarnings) return true;
+                }
+
+                return false;
+            }
+        }
+
 
         private void skipAnimations(BinaryReaderEx reader)
         {
@@ -457,7 +555,6 @@ namespace ModelPropertyChecker
 
 
         }
-
 
         private void loadFromODOL(BinaryReaderEx reader)
         {
@@ -579,11 +676,8 @@ namespace ModelPropertyChecker
 
         public void load(BinaryReaderEx reader)
         {
-            string type = "";
-            type += (char)reader.ReadByte();
-            type += (char)reader.ReadByte();
-            type += (char)reader.ReadByte();
-            type += (char)reader.ReadByte();
+
+            string type = reader.ReadAscii(4);
 
             if (type == "ODOL")
             {

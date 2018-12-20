@@ -9,9 +9,30 @@ namespace ModelPropertyChecker
 
     public class PropertyException : Exception
     {
+        public bool isError = true; //Can also be warning
+        public string propertyName { get; }
+        public string Message2 { get; }
         public PropertyException() {}
-        public PropertyException(string message) : base(message) {}
+
+        public PropertyException(string propertyName, string message) : base(message)
+        {
+            this.propertyName = propertyName;
+            this.Message2 = message;
+        }
         public PropertyException(string message, Exception inner) : base(message, inner){}
+        
+        public PropertyException(string propertyName, string message, bool isError) : base(message)
+        {
+            this.propertyName = propertyName;
+            this.Message2 = message;
+            this.isError = isError;
+        }
+
+        public override string ToString()
+        {
+            return Message;
+        }
+
     }
 
     interface PropertyCondition
@@ -24,7 +45,7 @@ namespace ModelPropertyChecker
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             if (string.IsNullOrWhiteSpace(property.Item2))
-                throw new PropertyException("Property value is empty.");
+                throw new PropertyException(property.Item1,"Property value is empty.");
             return true;
         }
     }
@@ -35,7 +56,7 @@ namespace ModelPropertyChecker
         {
             var isNumeric = double.TryParse(property.Item2, out double n);
             if (!isNumeric)
-                throw new PropertyException("Property is not a number.");
+                throw new PropertyException(property.Item1,"Property is not a number.");
             return isNumeric;
         }
     }
@@ -46,10 +67,14 @@ namespace ModelPropertyChecker
         {
             if (property.Item2 == "0" || property.Item2 == "1") return true;
 
-            throw new PropertyException("Property is not a boolean. Only 0/1 values are allowed");
+            var isNumeric = float.TryParse(property.Item2, out float n);
+            if (!isNumeric)
+                throw new PropertyException(property.Item1,"Property is not a boolean. Only 0/1 values are allowed");
+
+            //It's still a number, but outside of the valid range
+            throw new PropertyException(property.Item1,"Property is outside of range for boolean. Only 0/1 values are allowed", false);
+
             //#TODO suggest quick fix if it's yes/no or true/false
-            //#TODO if value is a number, but bigger than 1 just throw a warning, it's still handled by boolean by the engine
-            //But it really should be 0/1
         }
     }
 
@@ -76,8 +101,8 @@ namespace ModelPropertyChecker
             float actualLod = n + lodAdd;
             if (model.lods.ContainsKey(actualLod)) return true;
             if (!needAdd)
-                throw new PropertyException($"Property does not match a existing lod. Couldn't find lod {actualLod} or {n + lodAdd}");
-            throw new PropertyException($"Property does not match a existing lod. Couldn't find lod {actualLod}");
+                throw new PropertyException(property.Item1,$"Property does not match a existing lod. Couldn't find lod {actualLod} or {n + lodAdd}");
+            throw new PropertyException(property.Item1,$"Property does not match a existing lod. Couldn't find lod {actualLod}");
         }
     }
 
@@ -88,7 +113,7 @@ namespace ModelPropertyChecker
             if (sourceResolution == 1e13f) //#TODO if there is no geo lod, check that it's in the first lod.
                 return true;
             else
-                throw new PropertyException($"Property is not in Geometry LOD");
+                throw new PropertyException(property.Item1,$"Property is not in Geometry LOD");
             //#TODO log name of which lod it was found on.
         }
     }
@@ -103,7 +128,7 @@ namespace ModelPropertyChecker
             if (possibleValues.Contains(property.Item2.ToLower()))
                 return true;
             else
-                throw new PropertyException($"Property does not match Enum. Value \"{property.Item2}\" is not valid");
+                throw new PropertyException(property.Item1,$"Property does not match Enum. Value \"{property.Item2}\" is not valid");
         }
     }
 
@@ -117,7 +142,7 @@ namespace ModelPropertyChecker
             if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
                 return true;
             else
-                throw new PropertyException($"Property is only valid if property \"{propertyName}\" exists");
+                throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" exists");
         }
     }
 
@@ -129,7 +154,7 @@ namespace ModelPropertyChecker
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
-                throw new PropertyException($"Property is only valid if property \"{propertyName}\" doesn't exist");
+                throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" doesn't exist");
             else
                 return true;
         }
@@ -151,11 +176,11 @@ namespace ModelPropertyChecker
             if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
             {
                 var value = model.lods[sourceResolution].properties[propertyName];
-                throw new PropertyException($"Property is only valid if property \"{propertyName}\" is set to value \"{propertyValue}\". Current value is \"{value}\"");
+                throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" is set to value \"{propertyValue}\". Current value is \"{value}\"");
                 //#TODO suggest quick fix
             }
 
-            throw new PropertyException($"Property is only valid if property \"{propertyName}\" exists");
+            throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" exists");
         }
     }
 
@@ -168,7 +193,7 @@ namespace ModelPropertyChecker
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             if (property.Item2.Equals(propertyValue, StringComparison.CurrentCultureIgnoreCase))
-                throw new PropertyException($"Property value \"{property.Item2}\" is obsolete");
+                throw new PropertyException(property.Item1,$"Property value \"{property.Item2}\" is obsolete");
             return true;
         }
     }
@@ -199,7 +224,7 @@ namespace ModelPropertyChecker
                     if (result) return true;
                 } catch (PropertyException exception2)
                 {
-                    throw new PropertyException($"Or Condition failed. Either: {exception.Message} or {exception2.Message}");
+                    throw new PropertyException(property.Item1,$"Or Condition failed. Either: {exception.Message} or {exception2.Message}");
                 }
             }
 
@@ -218,7 +243,6 @@ namespace ModelPropertyChecker
             return new List<PropertyCondition>
             {
                 new PropVerify_IsNotEmpty(),
-                new PropVerify_IsNumber(),
                 new PropVerify_IsBoolean(),
                 forceGeometryLod ? new PropVerify_IsOnGeoLod() : null
             };
@@ -508,6 +532,43 @@ namespace ModelPropertyChecker
                 }
             }
         };
+
+        public static void verifyModel(ref Model model)
+        {
+            foreach (var lod in model.lods)
+            {
+                var exceptions = new List<PropertyException>();
+
+
+                foreach (var property in lod.Value.properties)
+                {
+                    if (!verifiers.ContainsKey(property.Key))
+                    {
+                        exceptions.Add(new PropertyException(property.Key,"Unknown Property", false));
+                        continue;
+                    }
+                        
+                    //#TODO detect potential typo's here by checking how big the difference to the known values is
+
+                    var tuple = new Tuple<string, string>(property.Key, property.Value);
+
+                    foreach (var condition in verifiers[property.Key])
+                    {
+                        try
+                        {
+                            condition.verifyProperty(model, tuple, lod.Key);
+                        } catch (PropertyException exception) { exceptions.Add(exception); }
+                    }
+                }
+
+                lod.Value.propertyExceptions = exceptions;
+
+
+            }
+        }
+
+
+
 
 
     }
