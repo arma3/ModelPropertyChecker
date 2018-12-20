@@ -5,7 +5,7 @@ using System.IO;
 
 namespace ModelPropertyChecker
 {
-    public struct LODResolution : IComparable
+    public struct LODResolution : IComparable, IComparable<float>, IEquatable<float>
     {
         private readonly float _value;
 
@@ -32,13 +32,13 @@ namespace ModelPropertyChecker
                 case null:
                     return 1;
                 case LODResolution otherRes:
-                    return Math.Abs(_value - otherRes._value) < otherRes._value * 1e-3f
+                    return Equals(otherRes)
                         ? 0 //Equals
                         : _value < otherRes._value
                             ? -1 //Smaller than
                             : 1; //Bigger than
                 case float otherResFloat:
-                    return Math.Abs(_value - otherResFloat) < otherResFloat * 1e-3f
+                    return Equals(otherResFloat)
                         ? 0 //Equals
                         : _value < otherResFloat
                             ? -1 //Smaller than
@@ -46,6 +46,57 @@ namespace ModelPropertyChecker
                 default:
                     throw new ArgumentException("Object is not a Resolution");
             }
+        }
+
+        public bool Equals(float other)
+        {
+            return Math.Abs(_value - other) < other * 1e-3f;
+        }
+
+        public bool Equals(LODResolution other)
+        {
+            return Equals(other._value);
+        }
+
+        public int CompareTo(float other)
+        {
+            return Equals(other)
+                ? 0 //Equals
+                : _value < other
+                    ? -1 //Smaller than
+                    : 1; //Bigger than
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is LODResolution other && Equals(other);
+        }
+
+        public static bool operator ==(LODResolution res1, LODResolution res2)
+        {
+            return res1.Equals(res2);
+        }
+
+        public static bool operator !=(LODResolution res1, LODResolution res2)
+        {
+            return !(res1 == res2);
+        }
+
+        public static bool operator ==(LODResolution res1, float res2)
+        {
+            return res1.Equals(res2);
+        }
+
+        public static bool operator !=(LODResolution res1, float res2)
+        {
+            return !(res1 == res2);
+        }
+
+
+        public override int GetHashCode()
+        {
+            return _value.GetHashCode();
         }
     }
 

@@ -14,14 +14,14 @@ namespace ModelPropertyChecker
         public PropertyException(string message, Exception inner) : base(message, inner){}
     }
 
-    interface PropertyVerifier
+    interface PropertyCondition
     {
-        bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution);
+        bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution);
     }
 
-    class PropVerify_IsNotEmpty : PropertyVerifier
+    class PropVerify_IsNotEmpty : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             if (string.IsNullOrWhiteSpace(property.Item2))
                 throw new PropertyException("Property value is empty.");
@@ -30,9 +30,9 @@ namespace ModelPropertyChecker
     }
 
 
-    class PropVerify_IsNumber : PropertyVerifier
+    class PropVerify_IsNumber : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             var isNumeric = double.TryParse(property.Item2, out double n);
             if (!isNumeric)
@@ -41,9 +41,9 @@ namespace ModelPropertyChecker
         }
     }
 
-    class PropVerify_IsBoolean : PropertyVerifier
+    class PropVerify_IsBoolean : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             if (property.Item2 == "0" || property.Item2 == "1") return true;
 
@@ -52,14 +52,14 @@ namespace ModelPropertyChecker
         }
     }
 
-    class PropVerify_IsLodIndex : PropertyVerifier
+    class PropVerify_IsLodIndex : PropertyCondition
     {
         private float lodAdd = 0;
 
         //adds a number to the value found in the property
         PropVerify_IsLodIndex(float add = 0) => lodAdd = add;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
             float.TryParse(property.Item2, out float n);
 
@@ -71,19 +71,151 @@ namespace ModelPropertyChecker
         }
     }
 
-    class PropVerify_IsEnum : PropertyVerifier
+    class PropVerify_IsOnGeoLod : PropertyCondition
+    {
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        {
+            if (sourceResolution == 1e13f) //#TODO if there is no geo lod, check that it's in the first lod.
+                return true;
+            else
+                throw new PropertyException($"Property is not in Geometry LOD");
+            //#TODO log name of which lod it was found on.
+        }
+    }
+
+    class PropVerify_IsEnum : PropertyCondition
     {
         private HashSet<string> possibleValues;
-        PropVerify_IsEnum(HashSet<string> values) => possibleValues = values;
+        public PropVerify_IsEnum(HashSet<string> values) => possibleValues = values;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, float sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
         {
-            if (possibleValues.Contains(property.Item2))
+            if (possibleValues.Contains(property.Item2.ToLower()))
                 return true;
             else
                 throw new PropertyException($"Property does not match Enum. Value \"{property.Item2}\" is not valid");
         }
     }
+
+    class PropertyVerifier
+    {
+        private static List<PropertyCondition> CreateBooleanCondition()
+        {
+            return new List<PropertyCondition>
+            {
+                new PropVerify_IsNumber(),
+                new PropVerify_IsBoolean()
+            };
+        }
+
+
+
+
+
+        public static Dictionary<string, List<PropertyCondition>> verifiers = new Dictionary<string, List<PropertyCondition>>
+        {
+            {
+                "aicovers",
+                CreateBooleanCondition()
+            },
+            {
+                "autocenter",
+                CreateBooleanCondition()
+            },
+            {
+                "buoyancy",
+                CreateBooleanCondition()
+            },
+            {
+                "canbeoccluded",
+                CreateBooleanCondition()
+            },
+            {
+                "canocclude",
+                CreateBooleanCondition()
+            },
+            {
+                "class",
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsEnum(
+                        new HashSet<string> 
+                        {
+                            "treehard", //#TODO order alphabetically and make sure we got all of them
+                            "treesoft",
+                            "bushhard",
+                            "bushsoft",
+                            "forest",
+                            "house",
+                            "church",
+                            "road",
+                            "thing",
+                            "land_decal",
+                            "thingx",
+                            "clutter",
+                            "bridge",
+                            "streetlamp",
+                            "housesimulated",
+                            "tower",
+                            "vehicle",
+                            "breakablehouseanimated",
+                            "pond"
+                        })
+                }
+            },
+            {
+                "damage",
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsEnum(
+                        new HashSet<string> 
+                        {
+                            "building", //#TODO order alphabetically and make sure we got all of them
+                            "no",
+                            "tent",
+                            "tree",
+                            "wall",
+                            "wreck"
+                        })
+                }
+            },
+            {
+                "dammage", //#TODO add a warning that this should be renamed to damage
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsEnum(
+                        new HashSet<string> 
+                        {
+                            "building", //#TODO order in some way and make sure we got all of them
+                            "no",
+                            "tent",
+                            "tree",
+                            "wall",
+                            "wreck"
+                        })
+                }
+            },
+
+        };
+
+
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }
