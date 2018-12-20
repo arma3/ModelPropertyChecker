@@ -34,6 +34,7 @@ namespace ModelPropertyChecker
         {
             InitializeComponent();
             //directory.LoadFromDirectory(@"C:\dev\projects\ACE3ganthe\addons");
+            //directory.LoadFromDirectory(@"I:\ACE3");
 
             //fail Name = "F:\\Steam\\SteamApps\\common\\Arma 3\\Curator\\Addons\\modules_f_curator\\a3\\modules_f_curator\\CAS\\surfaceGun.p3d"
         }
@@ -49,7 +50,7 @@ namespace ModelPropertyChecker
         }
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
-        { broken
+        {
             using(var fbd = new FolderBrowserDialog())
             {
                 DialogResult result = fbd.ShowDialog();

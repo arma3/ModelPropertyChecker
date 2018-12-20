@@ -12,9 +12,9 @@
         >
 
     <StackPanel Orientation="Horizontal">
-        <TreeView HorizontalAlignment="Left" Width="228"  SelectedItemChanged="SelectionChanged">
-            <TreeView.Resources>
-                <HierarchicalDataTemplate ItemsSource="{Binding lods.Values}" DataType="{x:Type local:Model}" x:Key="DataTemplate1">
+        <TreeView HorizontalAlignment="Left" Width="228"  SelectedItemChanged="SelectionChanged" ItemsSource="{Binding directory.models, PresentationTraceSources.TraceLevel=High}">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding lods.Values}" DataType="{x:Type local:Model}">
                     <StackPanel Orientation="Horizontal">
                         <Label>
                             <Label.Style>
@@ -54,13 +54,11 @@
                             </StackPanel>
                         </DataTemplate>
                     </HierarchicalDataTemplate.ItemTemplate>
-
-
                 </HierarchicalDataTemplate>
-            </TreeView.Resources>
-            <Button Content="Load Models" VerticalAlignment="Top" Width="75" Click="ButtonBase_OnClick"/>
-
+            </TreeView.ItemTemplate>
         </TreeView>
+        <Button Content="Load Models" VerticalAlignment="Top" Width="75" Click="ButtonBase_OnClick"/>
+
         <GridSplitter HorizontalAlignment="Stretch" Width="5"/>
         <Grid>
             <ListBox Name="problemList" ItemsSource="{Binding Path=currentErrors, PresentationTraceSources.TraceLevel=High, UpdateSourceTrigger=PropertyChanged}">

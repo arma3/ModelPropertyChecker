@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -17,8 +18,7 @@ namespace ModelPropertyChecker
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propname));
         }  
-
-        public List<Model> models { get; set; } = new List<Model>();
+        public ObservableCollection<Model> models { get; set; } = new ObservableCollection<Model>();
 
         public async void LoadFromDirectory(string path)
         {

@@ -118,6 +118,18 @@ namespace ModelPropertyChecker
         }
     }
 
+    class PropVerify_IsOnVisLod : PropertyCondition
+    {
+        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        {
+            if ((float)sourceResolution < 901)
+                return true;
+            else
+                throw new PropertyException(property.Item1, $"Property is not in Resolution LOD");
+            //#TODO log name of which lod it was found on.
+        }
+    }
+
     class PropVerify_IsEnum : PropertyCondition
     {
         private HashSet<string> possibleValues;
@@ -387,7 +399,12 @@ namespace ModelPropertyChecker
             },
             {
                 "lodnoshadow",
-                CreateBooleanCondition(true)
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsBoolean(),
+                    new PropVerify_IsOnVisLod()
+                }
             },
             {
                 "map",
