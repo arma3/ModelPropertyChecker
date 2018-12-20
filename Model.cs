@@ -255,7 +255,7 @@ namespace ModelPropertyChecker
             {
                 string key = reader.ReadAsciiz();
                 string value = reader.ReadAsciiz();
-                properties.Add(key,value);
+                properties.Add(key.ToLower(), value); //#TODO maybe we also want to keep a version with original casing?
             }
 
             var numFrames = reader.ReadUInt32();
@@ -373,13 +373,9 @@ namespace ModelPropertyChecker
 
                 if (tagName == "#Property#")
                 {
-                    string key = "";
-                    while ((ch = (char)reader.ReadByte()) != 0)
-                        key += ch;
-                    string value = "";
-                    while ((ch = (char)reader.ReadByte()) != 0)
-                        value += ch;
-                    properties.Add(key, value);
+                    string key = reader.ReadAsciiz();
+                    string value = reader.ReadAsciiz();
+                    properties.Add(key.ToLower(), value);  //#TODO maybe we also want to keep a version with original casing?
                 }
                 else
                 {
