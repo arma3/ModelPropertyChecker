@@ -159,6 +159,17 @@ namespace ModelPropertyChecker
         public LODResolution resolution { get; set; } = 0;
         public List<PropertyException> propertyExceptions { get; set; } = new List<PropertyException>();//Set by PropertyVerifier
 
+
+        public int exceptionCount
+        {
+            get
+            {
+                if (propertyExceptions != null)
+                    return propertyExceptions.Count;
+                return 0;
+            }
+        }
+
         public bool hasErrors
         {
             get
@@ -488,6 +499,20 @@ namespace ModelPropertyChecker
         public string subPath { get; set; }
         public string totalPath { get; set; }
 
+
+        public int exceptionCount
+        {
+            get
+            {
+                int c = 0;
+                foreach (var lod in lods)
+                {
+                    c += lod.Value.exceptionCount;
+                }
+
+                return c;
+            }
+        }
 
         public bool hasErrors
         {

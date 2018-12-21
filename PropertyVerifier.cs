@@ -325,7 +325,8 @@ namespace ModelPropertyChecker
                             "tower",
                             "vehicle",
                             "breakablehouseanimated",
-                            "pond"
+                            "pond",
+                            "man"
                         })
                 }
             },

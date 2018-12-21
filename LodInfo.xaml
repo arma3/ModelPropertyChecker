@@ -20,7 +20,11 @@
 
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Key" DisplayMemberBinding="{Binding Key}"/>
+                    <GridViewColumn Header="Key">
+                        <GridViewColumn.DisplayMemberBinding>
+                            <Binding Path="Key" StringFormat="'{0}'" />
+                        </GridViewColumn.DisplayMemberBinding>
+                    </GridViewColumn>
                     <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value.value}"/>
                 </GridView>
             </ListView.View>
@@ -52,7 +56,7 @@
                         </Label>
 
 
-                        <Label Content="{Binding propertyName}"/>
+                        <Label Content="{Binding propertyName}" ContentStringFormat="'{0}'"/>
                         <Label Content="{Binding Message}"/>
                     </StackPanel>
                 </DataTemplate>

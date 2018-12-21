@@ -53,6 +53,7 @@
                                 </Label.Style>
                             </Label>
                             <Label Content="{Binding subPath, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Label Content="{Binding exceptionCount}" ContentStringFormat="({0})"/>
                         </StackPanel>
 
                         <HierarchicalDataTemplate.ItemTemplate>
@@ -73,6 +74,7 @@
                                         </Label.Style>
                                     </Label>
                                     <Label Content="{Binding resolution}"/>
+                                    <Label Content="{Binding exceptionCount}" ContentStringFormat="({0})"/>
                                 </StackPanel>
                             </DataTemplate>
                         </HierarchicalDataTemplate.ItemTemplate>
