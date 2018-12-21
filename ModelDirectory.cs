@@ -23,17 +23,22 @@ namespace ModelPropertyChecker
 
             while (tasks.Count > 0)
             {
-                await Task.WhenAny(tasks).ContinueWith(t =>
+                var finishedTask = await Task.WhenAny(tasks);
+
+                tasks.Remove(finishedTask);
+
+#pragma warning disable 4014 //Don't want await here resharper :U
+                finishedTask.ContinueWith(t =>
                 {
-                    tasks.Remove(t.Result);
-                    var model = t.Result.Result;
+                    var model = t.Result;
                     PropertyVerifier.verifyModel(ref model);
                     return model;
                 }).ContinueWith(t =>
                 {
                     models.Add(t.Result);
                 }, uiThread);
-            } 
+#pragma warning restore 4014
+            }
         }
 
 
