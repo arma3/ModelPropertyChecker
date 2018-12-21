@@ -108,7 +108,7 @@ namespace ModelPropertyChecker
             return _value.GetHashCode();
         }
 
-        public string ToString(string format, IFormatProvider formatProvider)
+        public override string ToString()
         {
             if (Equals(1e13)) return "geometry";
             if (Equals(2e13)) return "geometrySimple";
@@ -136,6 +136,11 @@ namespace ModelPropertyChecker
                 return $"ShadowBuffer {_value - 11000}";
 
             return $"{_value}";
+        }
+
+        public string ToString(string format, IFormatProvider formatProvider)
+        {
+            return ToString();
         }
     }
 

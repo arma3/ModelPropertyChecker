@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace ModelPropertyChecker
@@ -52,6 +53,46 @@ namespace ModelPropertyChecker
                     Task.Run(() => directory.LoadFromDirectory(fbd.FileName, MainThread));
                 }
             }
+        }
+
+        private void Button_ExportIssues_OnClick(object sender, RoutedEventArgs e)
+        {
+            using (var fbd = new SaveFileDialog())
+            {
+                fbd.CreatePrompt = true;
+                fbd.AddExtension = true;
+                fbd.DefaultExt = "ini";
+                fbd.Filter = "Ini File (*.ini)|*.*";
+                fbd.Title = "Output filename";
+                var result = fbd.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.FileName))
+                {
+
+                    using (System.IO.StreamWriter file =
+                        new System.IO.StreamWriter(fbd.FileName))
+                    {
+                        foreach (var model in directory.models)
+                        {
+                            if (model.exceptionCount == 0) continue;
+                            file.WriteLine(model.totalPath);
+
+                            foreach (var lod in model.lods)
+                            {
+                                if (lod.Value.exceptionCount == 0) continue;
+                                file.WriteLine("\t" + lod.Value.resolution);
+
+                                foreach (var exception in lod.Value.propertyExceptions)
+                                {
+                                    file.WriteLine("\t\t" + exception.propertyName + "=" + exception.Message);
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+
         }
     }
 }

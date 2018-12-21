@@ -29,11 +29,17 @@
                 <RowDefinition Height="20"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
 
 
-            <Button Grid.Row="0" Content="Load Models"  Height="20" Click="ButtonBase_OnClick" Visibility="{Binding Path=directory.IsNotLoading, Converter={StaticResource BoolToVis}}"/>
 
-            <ProgressBar Grid.Row="0" Height="20" VerticalAlignment="Top" 
+            <Button Grid.Row="0" Grid.Column="0" Content="Load Models"  Height="20" Click="ButtonBase_OnClick" Visibility="{Binding Path=directory.IsNotLoading, Converter={StaticResource BoolToVis}}"/>
+            <Button Grid.Row="0" Grid.Column="1" Content="Export issues"  Height="20" Click="Button_ExportIssues_OnClick" Visibility="{Binding Path=directory.IsNotLoading, Converter={StaticResource BoolToVis}}"/>
+
+            <ProgressBar Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Height="20" VerticalAlignment="Top" 
                          Visibility="{Binding Path=directory.IsLoading, Converter={StaticResource BoolToVis}}" 
                          Minimum="0" 
                          Maximum="{Binding directory.totalNumberOfModels}" 
@@ -43,6 +49,7 @@
                 Visibility="{Binding Path=directory.IsLoading, Converter={StaticResource BoolToVis}}" 
                 HorizontalAlignment="Center" VerticalAlignment="Center" 
                 Grid.Row="0"
+                Grid.Column="0" Grid.ColumnSpan="2"
                 >
                 <TextBlock.Text>
                     <MultiBinding StringFormat="{}{0}/{1} {0:1}%">
@@ -56,7 +63,7 @@
 
 
 
-            <TreeView Grid.Row="1" SelectedItemChanged="SelectionChanged"
+            <TreeView Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" SelectedItemChanged="SelectionChanged"
                       ItemsSource="{Binding directory.models, PresentationTraceSources.TraceLevel=High}" 
                       Margin="0"
                       VerticalAlignment="Stretch"
