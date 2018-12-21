@@ -686,8 +686,6 @@ namespace ModelPropertyChecker
                     lods.Add(lodResolutions[i]+5, x);
                 } else
                     lods.Add(lodResolutions[i], x);
-
-                lods.Add(lodResolutions[i],x);
             }
        
         }
