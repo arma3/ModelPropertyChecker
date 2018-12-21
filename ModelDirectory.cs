@@ -1,23 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace ModelPropertyChecker
 {
 
-    public class ModelDirectory : INotifyPropertyChanged   
+    public class ModelDirectory
     {
-
-        public event PropertyChangedEventHandler PropertyChanged;  
-  
-        public void OnPropertyChanged(string propname)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propname));
-        }  
         public ObservableCollection<Model> models { get; set; } = new ObservableCollection<Model>();
 
         public async void LoadFromDirectory(string path)
@@ -42,8 +30,7 @@ namespace ModelPropertyChecker
                 {
                     models.Add(t.Result);
                 }, TaskScheduler.FromCurrentSynchronizationContext());
-            }
-            OnPropertyChanged("models");  
+            } 
         }
 
 

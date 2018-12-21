@@ -138,15 +138,25 @@ namespace ModelPropertyChecker
         }
     }
 
+    public struct Property
+    {
+        public string value { get; }
+        public readonly long valuePos;
+
+        public Property(string value, long valuePos)
+        {
+            this.value = value;
+            this.valuePos = valuePos;
+        }
+    }
+
+
 
     public class LOD
     {
-        public Dictionary<string, string> properties { get; } = new Dictionary<string, string>();
+        public Dictionary<string, Property> properties { get; } = new Dictionary<string, Property>();
         public LODResolution resolution { get; set; } = 0;
         public List<PropertyException> propertyExceptions { get; set; } //Set by PropertyVerifier
-
-
-        public string resolutionText => resolution.ToString();
 
         public bool hasErrors
         {
@@ -185,11 +195,11 @@ namespace ModelPropertyChecker
             {
                 while (reader.ReadByte() != 0) ; //skip name
                 reader.BaseStream.Seek(
-                    4*3*4 //Transform xyzn 4 vectors of 3 floats each
+                    4 * 3 * 4 //Transform xyzn 4 vectors of 3 floats each
                     + 4
-                    +4
-                    +4
-                    +4, SeekOrigin.Current);
+                    + 4
+                    + 4
+                    + 4, SeekOrigin.Current);
             }
 
             var numBonesSub = reader.ReadUInt32();
@@ -218,7 +228,7 @@ namespace ModelPropertyChecker
             {
                 var name1 = reader.ReadAsciiz();
 
-                reader.BaseStream.Seek(4+ 4*4*6 + 4 +8+8, SeekOrigin.Current);
+                reader.BaseStream.Seek(4 + 4 * 4 * 6 + 4 + 8 + 8, SeekOrigin.Current);
                 var name2 = reader.ReadAsciiz();
                 reader.BaseStream.Seek(8, SeekOrigin.Current);
 
@@ -231,7 +241,8 @@ namespace ModelPropertyChecker
                     reader.ReadUInt32();
                     reader.ReadByte();
                 }
-                reader.BaseStream.Seek((4+ 4*12)*numTrans, SeekOrigin.Current);
+
+                reader.BaseStream.Seek((4 + 4 * 12) * numTrans, SeekOrigin.Current);
 
                 reader.ReadUInt32();//#TODO skip TI stage if version <11
                 var nameTI = reader.ReadAsciiz();
@@ -247,31 +258,32 @@ namespace ModelPropertyChecker
             //reader.BaseStream.Seek(8, SeekOrigin.Current); //ptv vtp
 
             var numFaces2 = reader.ReadUInt32();
-            var faceSize = reader.ReadUInt32();
+            var faceSize = reader.ReadUInt32(); //This doesn't match.. Dunno why
             reader.BaseStream.Seek(2, SeekOrigin.Current);
             //reader.BaseStream.Seek(faceSize, SeekOrigin.Current);
 
-            int sz = 0;
+            //int sz = 0;
 
             for (int i = 0; i < numFaces2; i++)
             {
                 var numVerts = reader.ReadByte();
-                sz += 1;
-                sz += numVerts*4;
-                reader.BaseStream.Seek(numVerts*4, SeekOrigin.Current);
+                //sz += 1;
+                //sz += numVerts * 4;
+                reader.BaseStream.Seek(numVerts * 4, SeekOrigin.Current);
             }
 
 
             var numSections = reader.ReadUInt32();
             for (int i = 0; i < numSections; i++)
             {
-                reader.BaseStream.Seek(16 + 4 +2 +4, SeekOrigin.Current);
+                reader.BaseStream.Seek(16 + 4 + 2 + 4, SeekOrigin.Current);
                 var matIndex = reader.ReadInt32();
                 if (matIndex == -1)
                 {
                     var matname = reader.ReadAsciiz();
                 }
-                reader.BaseStream.Seek(4 + 8+4, SeekOrigin.Current);
+
+                reader.BaseStream.Seek(4 + 8 + 4, SeekOrigin.Current);
             }
 
             var numSelections = reader.ReadUInt32();
@@ -298,14 +310,15 @@ namespace ModelPropertyChecker
                 if (nElements != 0)
                 {
                     var b = reader.ReadByte();
-                    var expectedDataSize = (uint)(nElements * 4);
+                    var expectedDataSize = (uint) (nElements * 4);
                     var stream = reader.ReadCompressed(expectedDataSize, b==2);
                 }
-                nElements = reader.ReadInt32(); //verticies
+
+                nElements = reader.ReadInt32(); //vertices
                 if (nElements != 0)
                 {
                     var b = reader.ReadByte();
-                    var expectedDataSize = (uint)(nElements*4);
+                    var expectedDataSize = (uint) (nElements * 4);
                     var stream = reader.ReadCompressed(expectedDataSize, b == 2);
                 }
 
@@ -314,7 +327,7 @@ namespace ModelPropertyChecker
                 if (nElements != 0)
                 {
                     var b = reader.ReadByte();
-                    var expectedDataSize = (uint)(nElements);
+                    var expectedDataSize = (uint) nElements;
                     var stream = reader.ReadCompressed(expectedDataSize, b == 2);
                 }
                
@@ -325,8 +338,9 @@ namespace ModelPropertyChecker
             for (int i = 0; i < numProperties; i++)
             {
                 string key = reader.ReadAsciiz();
+                var valuePos = reader.Position;
                 string value = reader.ReadAsciiz();
-                properties.Add(key.ToLower(), value); //#TODO maybe we also want to keep a version with original casing?
+                properties.Add(key.ToLower(), new Property(value, valuePos)); //#TODO maybe we also want to keep a version with original casing?
             }
 
             var numFrames = reader.ReadUInt32();
@@ -396,7 +410,7 @@ namespace ModelPropertyChecker
             }*/
 
 
-            reader.BaseStream.Seek(4+4+1, SeekOrigin.Current);
+            reader.BaseStream.Seek(4 + 4 + 1, SeekOrigin.Current);
 
             //End of lod
 
@@ -407,7 +421,7 @@ namespace ModelPropertyChecker
             var head = reader.ReadAscii(4); //P3DM header
 
 
-            var appid= reader.ReadInt32();
+            var appid = reader.ReadInt32();
             var vers = reader.ReadInt32(); //version
 
             var numPoints = reader.ReadUInt32();
@@ -415,7 +429,7 @@ namespace ModelPropertyChecker
             var numFaces = reader.ReadUInt32();
             reader.ReadUInt32();
             reader.BaseStream.Seek(numPoints * 16, SeekOrigin.Current);
-            reader.BaseStream.Seek(numNormals * 4*3, SeekOrigin.Current);
+            reader.BaseStream.Seek(numNormals * 4 * 3, SeekOrigin.Current);
 
             for (int i = 0; i < numFaces; i++)
             {
@@ -427,7 +441,7 @@ namespace ModelPropertyChecker
             string tagTex = reader.ReadAscii(4);
             if (tagTex != "TAGG")
                 throw new NotImplementedException(); //#TODO
-            string tagName = "";
+            string tagName;
             do
             {
                 reader.ReadByte();
@@ -439,18 +453,17 @@ namespace ModelPropertyChecker
                 {
                     string key = reader.ReadAscii(64);
                     key = key.Substring(0, key.IndexOf('\0'));
+                    var valuePos = reader.Position;
                     string value = reader.ReadAscii(64);
                     value = value.Substring(0, value.IndexOf('\0'));
-                    properties.Add(key.ToLower(), value); //#TODO maybe we also want to keep a version with original casing?
-                }
-                else
+                    properties.Add(key.ToLower(), new Property(value,valuePos)); //#TODO maybe we also want to keep a version with original casing?
+                } else
                 {
                     reader.BaseStream.Seek(tagLen, SeekOrigin.Current);
                 }
-            }
-            while (tagName != "#EndOfFile#");//tagName != "" && 
+            } while (tagName != "#EndOfFile#"); //tagName != "" && 
 
-            return reader.ReadSingle();//resolution
+            return reader.ReadSingle(); //resolution
         }
     }
 
@@ -505,7 +518,7 @@ namespace ModelPropertyChecker
                 animTypes[i] = type;
                 while (reader.ReadByte() != 0) ; //skip name 
                 while (reader.ReadByte() != 0) ; //skip name 
-                reader.BaseStream.Seek(4*7, SeekOrigin.Current);
+                reader.BaseStream.Seek(4 * 7, SeekOrigin.Current);
 
                 switch (type)
                 {
@@ -521,7 +534,7 @@ namespace ModelPropertyChecker
                         reader.BaseStream.Seek(8, SeekOrigin.Current);
                         break;
                     case 8:
-                        reader.BaseStream.Seek(4*3*2+8, SeekOrigin.Current);
+                        reader.BaseStream.Seek(4 * 3 * 2 + 8, SeekOrigin.Current);
                         break;
                 }
             }
@@ -570,7 +583,7 @@ namespace ModelPropertyChecker
 
 
 
-            reader.BaseStream.Seek( 8 + 8 + 8 + 4 * 3 + 4 + 4 + 4 + 4 * 3 + 4 * 3
+            reader.BaseStream.Seek(8 + 8 + 8 + 4 * 3 + 4 + 4 + 4 + 4 * 3 + 4 * 3
                                    //lod dens coef
                                    + 4 + 4 + 4 * 3 * 5 //bb boxes
                                    + 4 * 9 //matrix
@@ -593,6 +606,7 @@ namespace ModelPropertyChecker
                     while (reader.ReadByte() != 0) ; //skip name 
                     while (reader.ReadByte() != 0) ; //skip name 
                 }
+
                 reader.ReadByte();
             }
 
@@ -603,13 +617,12 @@ namespace ModelPropertyChecker
                 throw new NotImplementedException();
             }
 
-            reader.BaseStream.Seek(16,SeekOrigin.Current);
-            reader.BaseStream.Seek(4,SeekOrigin.Current); //#TODO only if >72
+            reader.BaseStream.Seek(16, SeekOrigin.Current);
+            reader.BaseStream.Seek(4, SeekOrigin.Current); //#TODO only if >72
 
 
-            reader.BaseStream.Seek(14
-                
-                +4+1, SeekOrigin.Current); //#TODO only if >72
+            reader.BaseStream.Seek(14 
+                                   + 4 + 1, SeekOrigin.Current); //#TODO only if >72
 
             var name1 = reader.ReadAsciiz();
             var name2 = reader.ReadAsciiz();
@@ -651,10 +664,6 @@ namespace ModelPropertyChecker
                 lods.Add(lodResolutions[i],x);
             }
        
-
-
-
-
         }
 
         private void loadFromMLOD(BinaryReaderEx reader)
@@ -669,15 +678,12 @@ namespace ModelPropertyChecker
                 lods.Add(resolution, x);
             }
 
-
-
-
         }
 
         public void load(BinaryReaderEx reader)
         {
 
-            string type = reader.ReadAscii(4);
+            var type = reader.ReadAscii(4);
 
             if (type == "ODOL")
             {
@@ -685,8 +691,7 @@ namespace ModelPropertyChecker
             } else if (type == "MLOD")
             {
                 loadFromMLOD(reader);
-            }
-            else
+            } else
             {
                 throw new NotImplementedException();
             }

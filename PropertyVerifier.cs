@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ModelPropertyChecker
 {
@@ -55,7 +53,7 @@ namespace ModelPropertyChecker
             var isNumeric = double.TryParse(property.Item2, out double n);
             if (!isNumeric)
                 throw new PropertyException(property.Item1,"Property is not a number.");
-            return isNumeric;
+            return true;
         }
     }
 
@@ -78,11 +76,12 @@ namespace ModelPropertyChecker
 
     class PropVerify_IsLodIndex : PropertyCondition
     {
-        private float lodAdd = 0;
-        private bool needAdd = false;
+        private readonly float lodAdd;
+        private readonly bool needAdd;
 
         //adds a number to the value found in the property
-        public PropVerify_IsLodIndex(float add = 0, bool optionalAdd = false) {
+        public PropVerify_IsLodIndex(float add = 0, bool optionalAdd = false)
+        {
             lodAdd = add;
             needAdd = !optionalAdd;
         }
@@ -91,16 +90,20 @@ namespace ModelPropertyChecker
         {
             float.TryParse(property.Item2, out float n);
 
-            if (!needAdd) //Check if value is already lod resolution
-            {
-                if (model.lods.ContainsKey(n)) return true;
-            }
-
             float actualLod = n + lodAdd;
             if (model.lods.ContainsKey(actualLod)) return true;
             if (!needAdd)
-                throw new PropertyException(property.Item1,$"Property does not match a existing lod. Couldn't find lod {actualLod} or {n + lodAdd}");
-            throw new PropertyException(property.Item1,$"Property does not match a existing lod. Couldn't find lod {actualLod}");
+            {
+
+                if (!needAdd) //Check if value is already lod resolution
+                {
+                    if (model.lods.ContainsKey(n)) return true;
+                }
+
+                throw new PropertyException(property.Item1, $"Property does not match a existing lod. Couldn't find lod {actualLod} or {n + lodAdd}");
+            }
+
+            throw new PropertyException(property.Item1, $"Property does not match a existing lod. Couldn't find lod {actualLod}");
         }
     }
 
@@ -116,7 +119,7 @@ namespace ModelPropertyChecker
                     !model.lods.ContainsKey(1e13f) //No geo lod. Check if property is in first lod.
                     && model.lods.First().Key != sourceResolution //Not on first lod! Error.
                 )
-                    throw new PropertyException(property.Item1,$"Property is not in Geometry LOD");
+                    throw new PropertyException(property.Item1,"Property is not in Geometry LOD");
                 return true; //No geo lod, but property is on first lod. All fine.
             }
         }
@@ -129,14 +132,14 @@ namespace ModelPropertyChecker
             if ((float)sourceResolution < 901)
                 return true;
             else
-                throw new PropertyException(property.Item1, $"Property is not in Resolution LOD");
+                throw new PropertyException(property.Item1, "Property is not in Resolution LOD");
             //#TODO log name of which lod it was found on.
         }
     }
 
     class PropVerify_IsEnum : PropertyCondition
     {
-        private HashSet<string> possibleValues;
+        private readonly HashSet<string> possibleValues;
         public PropVerify_IsEnum(HashSet<string> values) => possibleValues = values;
 
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
@@ -150,7 +153,7 @@ namespace ModelPropertyChecker
 
     class PropVerify_ExpectPropertyExists : PropertyCondition
     {
-        private string propertyName;
+        private readonly string propertyName;
         public PropVerify_ExpectPropertyExists(string name) => propertyName = name;
 
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
@@ -164,7 +167,7 @@ namespace ModelPropertyChecker
 
     class PropVerify_ExpectPropertyNotExist : PropertyCondition
     {
-        private string propertyName;
+        private readonly string propertyName;
         public PropVerify_ExpectPropertyNotExist(string name) => propertyName = name;
 
         public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
@@ -178,8 +181,8 @@ namespace ModelPropertyChecker
 
     class PropVerify_ExpectPropertyValue : PropertyCondition
     {
-        private string propertyName;
-        private string propertyValue;
+        private readonly string propertyName;
+        private readonly string propertyValue;
 
         public PropVerify_ExpectPropertyValue(string name, string value)
         {
@@ -202,7 +205,7 @@ namespace ModelPropertyChecker
 
     class PropVerify_ObsoleteValue : PropertyCondition
     {
-        private string propertyValue; //#TODO add a "cause"
+        private readonly string propertyValue; //#TODO add a "cause"
 
         public PropVerify_ObsoleteValue(string value) => propertyValue = value;
 
@@ -216,8 +219,8 @@ namespace ModelPropertyChecker
 
     class PropVerify_LogicOr : PropertyCondition
     {
-        private PropertyCondition first;
-        private PropertyCondition second;
+        private readonly PropertyCondition first;
+        private readonly PropertyCondition second;
 
         public PropVerify_LogicOr(PropertyCondition item1, PropertyCondition item2)
         {
@@ -252,7 +255,7 @@ namespace ModelPropertyChecker
 
 
 
-    class PropertyVerifier
+    static class PropertyVerifier
     {
         private static List<PropertyCondition> CreateBooleanCondition(bool forceGeometryLod = false)
         {
@@ -264,7 +267,7 @@ namespace ModelPropertyChecker
             };
         }
 
-        public static Dictionary<string, List<PropertyCondition>> verifiers = new Dictionary<string, List<PropertyCondition>>
+        private static readonly Dictionary<string, List<PropertyCondition>> verifiers = new Dictionary<string, List<PropertyCondition>>
         {
             {
                 "aicovers",
@@ -529,8 +532,8 @@ namespace ModelPropertyChecker
                     new PropVerify_IsOnGeoLod(),
                     new PropVerify_ObsoleteValue("-1"), //-1 is already default if undefined
                     new PropVerify_LogicOr(
-                        new PropVerify_IsLodIndex(11000, false),
-                        new PropVerify_IsLodIndex(10000, false) 
+                        new PropVerify_IsLodIndex(11000, true),
+                        new PropVerify_IsLodIndex(10000, true) 
                         //This is fallback in case the others are not defined, so this can be either.
                     )
                 }
@@ -542,7 +545,7 @@ namespace ModelPropertyChecker
                     new PropVerify_IsNotEmpty(),
                     new PropVerify_IsOnGeoLod(),
                     new PropVerify_ObsoleteValue("-1"), //-1 is already default if undefined
-                    new PropVerify_IsLodIndex(10000, false)
+                    new PropVerify_IsLodIndex(10000, true)
                 }
             },
 
@@ -554,8 +557,8 @@ namespace ModelPropertyChecker
                     new PropVerify_IsOnGeoLod(),
                     new PropVerify_ObsoleteValue("-1"), //-1 is already default if undefined
                     new PropVerify_LogicOr(
-                        new PropVerify_IsLodIndex(11000, false),
-                        new PropVerify_IsLodIndex(10000, false) 
+                        new PropVerify_IsLodIndex(11000, true),
+                        new PropVerify_IsLodIndex(10000, true) 
                         //There is a bug in OB where shadowBuffer 0 would be displayed as
                         // "shadowVolume 1000"
                     )
@@ -569,8 +572,8 @@ namespace ModelPropertyChecker
                     new PropVerify_IsOnGeoLod(),
                     new PropVerify_ObsoleteValue("-1"), //-1 is already default if undefined
                     new PropVerify_LogicOr(
-                        new PropVerify_IsLodIndex(11000, false),
-                        new PropVerify_IsLodIndex(10000, false) 
+                        new PropVerify_IsLodIndex(11000, true),
+                        new PropVerify_IsLodIndex(10000, true) 
                         //There is a bug in OB where shadowBuffer 0 would be displayed as
                         // "shadowVolume 1000"
                     )
@@ -600,13 +603,13 @@ namespace ModelPropertyChecker
                 {
                     if (!verifiers.ContainsKey(property.Key))
                     {
-                        exceptions.Add(new PropertyException(property.Key,"Unknown Property", false));
+                        exceptions.Add(new PropertyException(property.Key, "Unknown Property", false));
                         continue;
                     }
                         
                     //#TODO detect potential typo's here by checking how big the difference to the known values is
 
-                    var tuple = new Tuple<string, string>(property.Key, property.Value);
+                    var tuple = new Tuple<string, string>(property.Key, property.Value.value);
 
                     foreach (var condition in verifiers[property.Key])
                     {

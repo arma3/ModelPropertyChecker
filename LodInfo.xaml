@@ -21,7 +21,7 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Key" DisplayMemberBinding="{Binding Key}"/>
-                    <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value}"/>
+                    <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value.value}"/>
                 </GridView>
             </ListView.View>
 
@@ -52,10 +52,8 @@
                         </Label>
 
 
-
-
-                        <Label Content="{Binding propertyName, StringFormat={}{0}°C}"/>
-                        <Label Content="{Binding Message, StringFormat={}{0}°C}"/>
+                        <Label Content="{Binding propertyName}"/>
+                        <Label Content="{Binding Message}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

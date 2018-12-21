@@ -7,16 +7,16 @@ using BIS.Core.Streams;
 
 namespace ModelPropertyChecker
 {
-    class ModelLoader
+    static class ModelLoader
     {
 
         //https://docs.microsoft.com/en-us/dotnet/api/system.io.directory.getfiles?redirectedfrom=MSDN&view=netframework-4.7.2#System_IO_Directory_GetFiles_System_String_
         class RecursiveFileProcessor
         {
 
-            private bool recursive = false;
-            private string basePath;
-            static int totalCount = 0;
+            private readonly bool recursive;
+            private readonly string basePath;
+            static int totalCount;
             static List<Task<Model>> tasks = new List<Task<Model>>();
 
             public RecursiveFileProcessor(string path, bool recurse = false)
@@ -60,9 +60,7 @@ namespace ModelPropertyChecker
                     b.UseLZOCompression = true;
                     try
                     {
-                        Model x = new Model();
-                        x.totalPath = path;
-                        x.subPath = path.Substring(basePath.Length + 1);
+                        Model x = new Model {totalPath = path, subPath = path.Substring(basePath.Length + 1)};
                         x.load(b);
                         //models.Add(x);
                         Interlocked.Increment(ref totalCount);
@@ -95,7 +93,7 @@ namespace ModelPropertyChecker
 
         public static List<Task<Model>> loadFromDirectory(string path, bool recursive = false)
         {
-            var processor = new RecursiveFileProcessor(path, true);
+            var processor = new RecursiveFileProcessor(path, recursive);
             return processor.Run();
         }
 
