@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -47,7 +47,7 @@ namespace ModelPropertyChecker
                         using (BinaryReaderEx b = new BinaryReaderEx(
                             //File.Open("P:\\Jbad_most_stred30.p3d", FileMode.Open)
                             //File.Open("P:\\mim_104.p3d", FileMode.Open)
-                            //File.Open("T:\\a3\\air_f\\heli_light_01\\heli_light_01_civil_f.p3d", FileMode.Open, FileAccess.Read)
+                            //File.Open("T:\\a3\\weapons_f\\acc\\acco_aco_f.p3d", FileMode.Open, FileAccess.Read)
                             File.Open(path, FileMode.Open, FileAccess.Read)
                         )
                     )

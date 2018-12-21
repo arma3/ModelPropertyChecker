@@ -295,7 +295,17 @@ namespace ModelPropertyChecker
                     var matname = reader.ReadAsciiz();
                 }
 
-                reader.BaseStream.Seek(4 + 8 + 4, SeekOrigin.Current);
+                var uvC = reader.ReadUInt32();
+                reader.BaseStream.Seek(8, SeekOrigin.Current);
+
+                var uknw = reader.ReadUInt32();
+                if (uknw == 1)
+                {
+                    reader.BaseStream.Seek(16 + 4 + 2 + 4 +2 +16, SeekOrigin.Current);
+                }
+
+
+
             }
 
             var numSelections = reader.ReadUInt32();
