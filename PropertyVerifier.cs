@@ -33,12 +33,12 @@ namespace ModelPropertyChecker
 
     interface PropertyCondition
     {
-        bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution);
+        bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod);
     }
 
     class PropVerify_IsNotEmpty : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             if (string.IsNullOrWhiteSpace(property.Item2))
                 throw new PropertyException(property.Item1,"Property value is empty.");
@@ -48,7 +48,7 @@ namespace ModelPropertyChecker
 
     class PropVerify_IsNumber : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             var isNumeric = double.TryParse(property.Item2, out double n);
             if (!isNumeric)
@@ -59,7 +59,7 @@ namespace ModelPropertyChecker
 
     class PropVerify_IsBoolean : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             if (property.Item2 == "0" || property.Item2 == "1") return true;
 
@@ -86,7 +86,7 @@ namespace ModelPropertyChecker
             needAdd = !optionalAdd;
         }
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             float.TryParse(property.Item2, out float n);
 
@@ -109,15 +109,15 @@ namespace ModelPropertyChecker
 
     class PropVerify_IsOnGeoLod : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
-            if (sourceResolution == 1e13f) //#TODO if there is no geo lod, check that it's in the first lod.
+            if (sourceLod.resolution == 1e13f) //#TODO if there is no geo lod, check that it's in the first lod.
                 return true;
             else
             {
                 if (
                     !model.lods.ContainsKey(1e13f) //No geo lod. Check if property is in first lod.
-                    && model.lods.First().Key != sourceResolution //Not on first lod! Error.
+                    && model.lods.First().Value != sourceLod //Not on first lod! Error.
                 )
                     throw new PropertyException(property.Item1,"Property is not in Geometry LOD");
                 return true; //No geo lod, but property is on first lod. All fine.
@@ -127,9 +127,9 @@ namespace ModelPropertyChecker
 
     class PropVerify_IsOnVisLod : PropertyCondition
     {
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
-            if ((float)sourceResolution < 901)
+            if ((float)sourceLod.resolution < 901)
                 return true;
             else
                 throw new PropertyException(property.Item1, "Property is not in Resolution LOD");
@@ -142,7 +142,7 @@ namespace ModelPropertyChecker
         private readonly HashSet<string> possibleValues;
         public PropVerify_IsEnum(HashSet<string> values) => possibleValues = values;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             if (possibleValues.Contains(property.Item2.ToLower()))
                 return true;
@@ -156,9 +156,9 @@ namespace ModelPropertyChecker
         private readonly string propertyName;
         public PropVerify_ExpectPropertyExists(string name) => propertyName = name;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
-            if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
+            if (sourceLod.properties.ContainsKey(propertyName))
                 return true;
             else
                 throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" exists");
@@ -170,9 +170,9 @@ namespace ModelPropertyChecker
         private readonly string propertyName;
         public PropVerify_ExpectPropertyNotExist(string name) => propertyName = name;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
-            if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
+            if (sourceLod.properties.ContainsKey(propertyName))
                 throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" doesn't exist");
             else
                 return true;
@@ -190,11 +190,11 @@ namespace ModelPropertyChecker
             propertyValue = value;
         }
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
-            if (model.lods[sourceResolution].properties.ContainsKey(propertyName))
+            if (sourceLod.properties.ContainsKey(propertyName))
             {
-                var value = model.lods[sourceResolution].properties[propertyName];
+                var value = sourceLod.properties[propertyName];
                 throw new PropertyException(property.Item1,$"Property is only valid if property \"{propertyName}\" is set to value \"{propertyValue}\". Current value is \"{value}\"");
                 //#TODO suggest quick fix
             }
@@ -209,7 +209,7 @@ namespace ModelPropertyChecker
 
         public PropVerify_ObsoleteValue(string value) => propertyValue = value;
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             if (property.Item2.Equals(propertyValue, StringComparison.CurrentCultureIgnoreCase))
                 throw new PropertyException(property.Item1,$"Property value \"{property.Item2}\" is obsolete");
@@ -229,17 +229,17 @@ namespace ModelPropertyChecker
         }
 
 
-        public bool verifyProperty(Model model, Tuple<string, string> property, LODResolution sourceResolution)
+        public bool verifyProperty(Model model, Tuple<string, string> property, LOD sourceLod)
         {
             try
             {
-                var result = first.verifyProperty(model, property, sourceResolution);
+                var result = first.verifyProperty(model, property, sourceLod);
                 if (result) return true;
             } catch (PropertyException exception)
             {
                 try
                 {
-                    var result = second.verifyProperty(model, property, sourceResolution);
+                    var result = second.verifyProperty(model, property, sourceLod);
                     if (result) return true;
                 } catch (PropertyException exception2)
                 {
@@ -622,7 +622,7 @@ namespace ModelPropertyChecker
                     {
                         try
                         {
-                            condition.verifyProperty(model, tuple, lod.Key);
+                            condition.verifyProperty(model, tuple, lod.Value);
                         } catch (PropertyException exception) { lod.Value.propertyExceptions.Add(exception); }
                     }
                 }

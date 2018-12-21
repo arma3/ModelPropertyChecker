@@ -20,6 +20,7 @@ namespace ModelPropertyChecker
         public bool IsNotLoading => !IsLoading;
         public int totalNumberOfModels { get; set; }
         public bool isIndeterminate => totalNumberOfModels == 0;
+        public float completedPercentage => (float)models.Count / totalNumberOfModels;
 
 
         public async void LoadFromDirectory(string path, TaskScheduler uiThread)
@@ -55,6 +56,7 @@ namespace ModelPropertyChecker
                 {
                     models.Add(t.Result);
                     OnPropertyChanged("models");
+                    OnPropertyChanged("completedPercentage");
                 }, uiThread);
     #pragma warning restore 4014
             }

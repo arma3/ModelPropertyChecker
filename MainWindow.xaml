@@ -52,9 +52,10 @@
                 Grid.Column="0" Grid.ColumnSpan="2"
                 >
                 <TextBlock.Text>
-                    <MultiBinding StringFormat="{}{0}/{1} {0:1}%">
+                    <MultiBinding StringFormat="{}{0}/{1} {2:P2}">
                         <Binding Path="directory.models.Count" Mode="OneWay"/>
                         <Binding Path="directory.totalNumberOfModels" Mode="OneWay"/>
+                        <Binding Path="directory.completedPercentage" Mode="OneWay"/>
                     </MultiBinding>
                 </TextBlock.Text>
             </TextBlock>
