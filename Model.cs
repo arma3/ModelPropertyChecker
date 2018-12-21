@@ -718,7 +718,7 @@ namespace ModelPropertyChecker
                 if (lods.ContainsKey(x.resolution))
                 {
                     x.propertyExceptions.Add(new PropertyException("<Model Loader>", "Duplicate LOD. This lod is "+x.resolution.ToString()));
-                    lods.Add(lodResolutions[i]+5, x);
+                    lods.Add(-lodResolutions[i], x);
                 } else
                     lods.Add(lodResolutions[i], x);
             }
