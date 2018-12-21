@@ -18,16 +18,25 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using BIS.Core.Streams;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace ModelPropertyChecker
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged   
     {
 
+        public event PropertyChangedEventHandler PropertyChanged;  
+  
+        public void OnPropertyChanged(string propname)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propname));
+        }  
+ 
         public ModelDirectory directory { get; } = new ModelDirectory();
+        public LOD currentLod { get; set; }
         public BindingList<PropertyException> currentErrors { get; set; }= new BindingList<PropertyException>();
 
         public MainWindow()
@@ -43,6 +52,8 @@ namespace ModelPropertyChecker
         private void SelectionChanged(object sender, RoutedPropertyChangedEventArgs<Object> e)
         {
             currentErrors.Clear();
+            currentLod = e.NewValue as LOD;
+            OnPropertyChanged("currentLod");
             if (e.NewValue is LOD lod)
             {
                 foreach (var exception in lod.propertyExceptions) { currentErrors.Add(exception); }
@@ -51,13 +62,14 @@ namespace ModelPropertyChecker
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
-            using(var fbd = new FolderBrowserDialog())
+            using(var fbd = new CommonOpenFileDialog())
             {
-                DialogResult result = fbd.ShowDialog();
+                fbd.IsFolderPicker = true;
+                var result = fbd.ShowDialog();
 
-                if (!string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                if (result == CommonFileDialogResult.Ok && !string.IsNullOrWhiteSpace(fbd.FileName))
                 {
-                    directory.LoadFromDirectory(fbd.SelectedPath);
+                    directory.LoadFromDirectory(fbd.FileName);
                 }
             }
         }

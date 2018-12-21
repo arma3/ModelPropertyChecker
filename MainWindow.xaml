@@ -7,75 +7,90 @@
         xmlns:generic="clr-namespace:System.Collections.Generic;assembly=mscorlib"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="Arma Model Property Checker" Height="450" Width="800"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         >
 
-    <StackPanel Orientation="Horizontal">
-        <TreeView HorizontalAlignment="Left" Width="228"  SelectedItemChanged="SelectionChanged" ItemsSource="{Binding directory.models, PresentationTraceSources.TraceLevel=High}">
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding lods.Values}" DataType="{x:Type local:Model}">
-                    <StackPanel Orientation="Horizontal">
-                        <Label>
-                            <Label.Style>
-                                <Style TargetType="Label">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
-                                            <Setter Property="Content" Value="❌" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
-                                            <Setter Property="Content" Value="⚠" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Label.Style>
-                        </Label>
-                        <Label Content="{Binding subPath, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
+    <Grid Margin="0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
 
-                    <HierarchicalDataTemplate.ItemTemplate>
-                        <DataTemplate DataType="local:LOD">
-                            <StackPanel Orientation="Horizontal">
-                                <Label>
-                                    <Label.Style>
-                                        <Style TargetType="Label">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
-                                                    <Setter Property="Content" Value="❌" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
-                                                    <Setter Property="Content" Value="⚠" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Label.Style>
-                                </Label>
-                                <Label Content="{Binding resolution}"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </HierarchicalDataTemplate.ItemTemplate>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-        </TreeView>
-        <Button Content="Load Models" VerticalAlignment="Top" Width="75" Click="ButtonBase_OnClick"/>
 
-        <GridSplitter HorizontalAlignment="Stretch" Width="5"/>
-        <Grid>
-            <ListBox Name="problemList" ItemsSource="{Binding Path=currentErrors, PresentationTraceSources.TraceLevel=High, UpdateSourceTrigger=PropertyChanged}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="local:PropertyException">
+
+        <Grid Margin="0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+
+            <Button Grid.Row="0" Content="Load Models"  Height="20" Click="ButtonBase_OnClick"/>
+
+            <TreeView Grid.Row="1" SelectedItemChanged="SelectionChanged"
+                      ItemsSource="{Binding directory.models, PresentationTraceSources.TraceLevel=High}" 
+                      Margin="0"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch"
+                      >
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding lods.Values}" DataType="{x:Type local:Model}">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="{Binding propertyName, StringFormat={}{0}°C}"/>
-                            <Label Content="{Binding Message2, StringFormat={}{0}°C}"/>
+                            <Label>
+                                <Label.Style>
+                                    <Style TargetType="Label">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
+                                                <Setter Property="Content" Value="❌" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
+                                                <Setter Property="Content" Value="⚠" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Label.Style>
+                            </Label>
+                            <Label Content="{Binding subPath, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+
+                        <HierarchicalDataTemplate.ItemTemplate>
+                            <DataTemplate DataType="local:LOD">
+                                <StackPanel Orientation="Horizontal">
+                                    <Label>
+                                        <Label.Style>
+                                            <Style TargetType="Label">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=hasErrors}" Value="True">
+                                                        <Setter Property="Content" Value="❌" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Path=hasWarnings}" Value="True">
+                                                        <Setter Property="Content" Value="⚠" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Label.Style>
+                                    </Label>
+                                    <Label Content="{Binding resolution}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </HierarchicalDataTemplate.ItemTemplate>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
         </Grid>
+        <GridSplitter Grid.Column="1" Width="5" ResizeBehavior="PreviousAndNext" ShowsPreview="True" ResizeDirection="Columns" />
+        <DockPanel Grid.Column="2">
+            <local:LodInfo DataContext="{Binding Path=currentLod}"></local:LodInfo>
+        </DockPanel>
 
 
+     
 
+        
 
+    </Grid>
 
-    </StackPanel>
 </Window>

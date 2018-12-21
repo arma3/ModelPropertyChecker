@@ -33,12 +33,15 @@ namespace ModelPropertyChecker
                 tasks.Remove(finishedTask);
 
                 // Await the completed task.
-
-                var completedModel = await finishedTask;
-
-                PropertyVerifier.verifyModel(ref completedModel);
-
-                models.Add(completedModel);
+                await finishedTask.ContinueWith(t =>
+                {
+                    var model = t.Result;
+                    PropertyVerifier.verifyModel(ref model);
+                    return model;
+                }).ContinueWith(t =>
+                {
+                    models.Add(t.Result);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
             }
             OnPropertyChanged("models");  
         }

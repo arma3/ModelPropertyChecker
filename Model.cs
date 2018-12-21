@@ -50,7 +50,7 @@ namespace ModelPropertyChecker
 
         public bool Equals(float other)
         {
-            return Math.Abs(_value - other) < other * 1e-3f;
+            return Math.Abs(_value - other) <= other * 1e-3f;
         }
 
         public bool Equals(LODResolution other)
@@ -141,7 +141,7 @@ namespace ModelPropertyChecker
 
     public class LOD
     {
-        public readonly Dictionary<string, string> properties = new Dictionary<string, string>();
+        public Dictionary<string, string> properties { get; } = new Dictionary<string, string>();
         public LODResolution resolution { get; set; } = 0;
         public List<PropertyException> propertyExceptions { get; set; } //Set by PropertyVerifier
 

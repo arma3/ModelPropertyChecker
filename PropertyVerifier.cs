@@ -9,22 +9,20 @@ namespace ModelPropertyChecker
 
     public class PropertyException : Exception
     {
-        public bool isError = true; //Can also be warning
+        public bool isError { get; } = true; //Can also be warning
         public string propertyName { get; }
-        public string Message2 { get; }
         public PropertyException() {}
 
         public PropertyException(string propertyName, string message) : base(message)
         {
             this.propertyName = propertyName;
-            this.Message2 = message;
         }
+
         public PropertyException(string message, Exception inner) : base(message, inner){}
         
         public PropertyException(string propertyName, string message, bool isError) : base(message)
         {
             this.propertyName = propertyName;
-            this.Message2 = message;
             this.isError = isError;
         }
 
@@ -113,8 +111,14 @@ namespace ModelPropertyChecker
             if (sourceResolution == 1e13f) //#TODO if there is no geo lod, check that it's in the first lod.
                 return true;
             else
-                throw new PropertyException(property.Item1,$"Property is not in Geometry LOD");
-            //#TODO log name of which lod it was found on.
+            {
+                if (
+                    !model.lods.ContainsKey(1e13f) //No geo lod. Check if property is in first lod.
+                    && model.lods.First().Key != sourceResolution //Not on first lod! Error.
+                )
+                    throw new PropertyException(property.Item1,$"Property is not in Geometry LOD");
+                return true; //No geo lod, but property is on first lod. All fine.
+            }
         }
     }
 
@@ -415,9 +419,44 @@ namespace ModelPropertyChecker
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
+
+
+
                             "building", //#TODO order in some way and make sure we got all of them
                             "bunker",
-                            "bush"
+                            "bush",
+                            "busstop",	
+                            "chapel",	
+                            "church",	
+                            "cross",	
+                            "fence",	
+                            "fortress",	
+                            "fountain",	
+                            "fuelstation",	
+                            "hide",	
+                            "hospital",	
+                            "house",	
+                            "lighthouse",	
+                            "main road",
+                            "power lines",
+                            "powersolar",
+                            "powerwave",
+                            "powerwind",	
+                            "quay",	
+                            "railway",	
+                            "road",	
+                            "rock",	
+                            "ruin",	
+                            "shipwreck",	
+                            "small tree",
+                            "stack",	
+                            "tourism",	
+                            "track",	
+                            "transmitter",	
+                            "tree",	
+                            "view-tower",	
+                            "wall",	
+                            "watertower",
                         })
                 }
             },
