@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using BIS.Core.Streams;
 
 namespace ModelPropertyChecker
@@ -18,7 +19,6 @@ namespace ModelPropertyChecker
             private readonly string basePath;
             static int totalCount;
             static List<Task<Model>> tasks = new List<Task<Model>>();
-
             public RecursiveFileProcessor(string path, bool recurse = false)
             {
                 basePath = path;
@@ -34,51 +34,64 @@ namespace ModelPropertyChecker
                 if (targetDirectory.Contains("@")) return;
 
                 // Process the list of files found in the directory.
-                string[] fileEntries = Directory.GetFiles(targetDirectory);
+                string[] fileEntries = Directory.GetFiles(targetDirectory,"*.p3d", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
                 foreach (string fileName in fileEntries)
                     ProcessFile(fileName);
-
-                if (!recursive)
-                    return;
-
-                // Recurse into subdirectories of this directory.
-                string[] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
-                foreach (string subdirectory in subdirectoryEntries)
-                    ProcessDirectory(subdirectory);
             }
 
             Model loadModel(string path)
             {
-                using (BinaryReaderEx b = new BinaryReaderEx(
-                        //File.Open("P:\\Jbad_most_stred30.p3d", FileMode.Open)
-                        //File.Open("P:\\mim_104.p3d", FileMode.Open)
-                        //File.Open("T:\\a3\\air_f\\heli_light_01\\heli_light_01_civil_f.p3d", FileMode.Open, FileAccess.Read)
-                        File.Open(path, FileMode.Open, FileAccess.Read)
-                    )
-                )
+
+                try
                 {
-                    b.UseLZOCompression = true;
-                    try
+                        using (BinaryReaderEx b = new BinaryReaderEx(
+                            //File.Open("P:\\Jbad_most_stred30.p3d", FileMode.Open)
+                            //File.Open("P:\\mim_104.p3d", FileMode.Open)
+                            //File.Open("T:\\a3\\air_f\\heli_light_01\\heli_light_01_civil_f.p3d", FileMode.Open, FileAccess.Read)
+                            File.Open(path, FileMode.Open, FileAccess.Read)
+                        )
+                    )
                     {
-                        Model x = new Model {totalPath = path, subPath = path.Substring(basePath.Length + 1)};
-                        x.load(b);
-                        //models.Add(x);
-                        Interlocked.Increment(ref totalCount);
-                        Console.WriteLine($@"{totalCount} {path}");
-                        return x;
-                    } catch (ArgumentOutOfRangeException ex)
-                    {
-                        return null;
+                        b.UseLZOCompression = true;
+                        try
+                        {
+                            Model x = new Model {totalPath = path, subPath = path.Substring(basePath.Length + 1)};
+                            try {
+                                x.load(b);
+                            } catch (Exception ex) {
+
+
+                                Console.WriteLine(path+"\n"+ex.ToString());
+                                //MessageBox.Show(path+"\n"+ex.ToString());
+                            }
+
+
+
+
+
+                           
+                            //models.Add(x);
+                            Interlocked.Increment(ref totalCount);
+                            Console.WriteLine($@"{totalCount} {path}");
+                            return x;
+                        } catch (ArgumentOutOfRangeException ex)
+                        {
+                            return null;
+                        }
                     }
                 }
+                catch (System.IO.IOException ex)
+                {
+                    //MessageBox.Show(path + "\n" + ex.ToString());
+                    return null;
+                }
+
             }
 
 
             // Insert logic for processing found files here.
             void ProcessFile(string path)
             {
-                if (!path.EndsWith("p3d")) return;
-
                 tasks.Add(
                     Task.Run(() => loadModel(path))
                 );

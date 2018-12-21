@@ -274,6 +274,15 @@ namespace ModelPropertyChecker
                 CreateBooleanCondition(true)
             },
             {
+                "armor",
+                new List<PropertyCondition>
+                {
+                    new PropVerify_IsNotEmpty(),
+                    new PropVerify_IsOnGeoLod(),
+                    new PropVerify_IsNumber()
+                }
+            },
+            {
                 "autocenter",
                 CreateBooleanCondition(true)
             },
@@ -596,14 +605,11 @@ namespace ModelPropertyChecker
         {
             foreach (var lod in model.lods)
             {
-                var exceptions = new List<PropertyException>();
-
-
                 foreach (var property in lod.Value.properties)
                 {
                     if (!verifiers.ContainsKey(property.Key))
                     {
-                        exceptions.Add(new PropertyException(property.Key, "Unknown Property", false));
+                        lod.Value.propertyExceptions.Add(new PropertyException(property.Key, "Unknown Property", false));
                         continue;
                     }
                         
@@ -616,11 +622,9 @@ namespace ModelPropertyChecker
                         try
                         {
                             condition.verifyProperty(model, tuple, lod.Key);
-                        } catch (PropertyException exception) { exceptions.Add(exception); }
+                        } catch (PropertyException exception) { lod.Value.propertyExceptions.Add(exception); }
                     }
                 }
-
-                lod.Value.propertyExceptions = exceptions;
 
 
             }

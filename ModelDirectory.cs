@@ -8,28 +8,31 @@ namespace ModelPropertyChecker
     {
         public ObservableCollection<Model> models { get; set; } = new ObservableCollection<Model>();
 
-        public async void LoadFromDirectory(string path)
+        public async void LoadFromDirectory(string path, TaskScheduler uiThread)
         {
-            models.Clear();
+
+            await Task.Run(() => { }).ContinueWith(t =>
+            {
+                models.Clear();
+
+            }, uiThread);
+
+            
 
             var tasks = ModelLoader.loadFromDirectory(path, true);
 
             while (tasks.Count > 0)
             {
-                var finishedTask = await Task.WhenAny(tasks);
-
-                tasks.Remove(finishedTask);
-
-                // Await the completed task.
-                await finishedTask.ContinueWith(t =>
+                await Task.WhenAny(tasks).ContinueWith(t =>
                 {
-                    var model = t.Result;
+                    tasks.Remove(t.Result);
+                    var model = t.Result.Result;
                     PropertyVerifier.verifyModel(ref model);
                     return model;
                 }).ContinueWith(t =>
                 {
                     models.Add(t.Result);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                }, uiThread);
             } 
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows;
 
 namespace ModelPropertyChecker
 {
@@ -156,7 +157,7 @@ namespace ModelPropertyChecker
     {
         public Dictionary<string, Property> properties { get; } = new Dictionary<string, Property>();
         public LODResolution resolution { get; set; } = 0;
-        public List<PropertyException> propertyExceptions { get; set; } //Set by PropertyVerifier
+        public List<PropertyException> propertyExceptions { get; set; } = new List<PropertyException>();//Set by PropertyVerifier
 
         public bool hasErrors
         {
@@ -340,7 +341,11 @@ namespace ModelPropertyChecker
                 string key = reader.ReadAsciiz();
                 var valuePos = reader.Position;
                 string value = reader.ReadAsciiz();
-                properties.Add(key.ToLower(), new Property(value, valuePos)); //#TODO maybe we also want to keep a version with original casing?
+
+                if (properties.ContainsKey(key.ToLower()))
+                    propertyExceptions.Add(new PropertyException(key, "duplicate property " + value));
+                else
+                    properties.Add(key.ToLower(), new Property(value, valuePos)); //#TODO maybe we also want to keep a version with original casing?
             }
 
             var numFrames = reader.ReadUInt32();
@@ -456,7 +461,11 @@ namespace ModelPropertyChecker
                     var valuePos = reader.Position;
                     string value = reader.ReadAscii(64);
                     value = value.Substring(0, value.IndexOf('\0'));
-                    properties.Add(key.ToLower(), new Property(value,valuePos)); //#TODO maybe we also want to keep a version with original casing?
+
+                    if (properties.ContainsKey(key.ToLower()))
+                        propertyExceptions.Add(new PropertyException(key, "duplicate property "+ value));
+                    else
+                        properties.Add(key.ToLower(), new Property(value,valuePos)); //#TODO maybe we also want to keep a version with original casing?
                 } else
                 {
                     reader.BaseStream.Seek(tagLen, SeekOrigin.Current);
@@ -572,6 +581,15 @@ namespace ModelPropertyChecker
         private void loadFromODOL(BinaryReaderEx reader)
         {
             var version = reader.ReadUInt32();//version
+
+            if (version < 72)
+            {
+                //#TODO
+                return;
+            }
+
+
+
             reader.ReadUInt32();
             var muz = reader.ReadAsciiz();
             numLods = reader.ReadUInt32();
@@ -661,6 +679,14 @@ namespace ModelPropertyChecker
                 LOD x = new LOD();
                 x.loadFromODOL(reader);
                 x.resolution = lodResolutions[i];
+
+                if (lods.ContainsKey(x.resolution))
+                {
+                    x.propertyExceptions.Add(new PropertyException("<Model Loader>", "Duplicate LOD. This lod is "+x.resolution.ToString()));
+                    lods.Add(lodResolutions[i]+5, x);
+                } else
+                    lods.Add(lodResolutions[i], x);
+
                 lods.Add(lodResolutions[i],x);
             }
        
@@ -682,7 +708,6 @@ namespace ModelPropertyChecker
 
         public void load(BinaryReaderEx reader)
         {
-
             var type = reader.ReadAscii(4);
 
             if (type == "ODOL")

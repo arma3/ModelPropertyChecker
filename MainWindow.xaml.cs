@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
@@ -46,7 +47,9 @@ namespace ModelPropertyChecker
 
                 if (result == CommonFileDialogResult.Ok && !string.IsNullOrWhiteSpace(fbd.FileName))
                 {
-                    directory.LoadFromDirectory(fbd.FileName);
+                    var MainThread = TaskScheduler.FromCurrentSynchronizationContext();
+
+                    Task.Run(() => directory.LoadFromDirectory(fbd.FileName, MainThread));
                 }
             }
         }
