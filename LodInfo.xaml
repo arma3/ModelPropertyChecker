@@ -39,25 +39,28 @@
                 <DataTemplate DataType="local:PropertyException">
                     <StackPanel Orientation="Horizontal">
 
-
-                        <Label>
-                            <Label.Style>
-                                <Style TargetType="Label">
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Path=isError}" Value="True">
-                                            <Setter Property="Content" Value="❌" />
+                                            <Setter Property="Text" Value="❌  " />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding Path=isError}" Value="False">
-                                            <Setter Property="Content" Value="⚠" />
+                                            <Setter Property="Text" Value="⚠  " />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </Label.Style>
-                        </Label>
+                            </TextBlock.Style>
+                        </TextBlock>
 
 
-                        <Label Content="{Binding propertyName}" ContentStringFormat="'{0}'"/>
-                        <Label Content="{Binding Message}"/>
+                        <TextBlock Height="15">
+                            <TextBlock.Text>
+                                <Binding Path="propertyName" StringFormat="'{0}'  " />
+                            </TextBlock.Text>
+                        </TextBlock>
+                        <TextBlock Text="{Binding Message}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
