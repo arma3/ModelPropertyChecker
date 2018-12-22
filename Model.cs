@@ -1,4 +1,4 @@
-﻿using BIS.Core.Streams;
+using BIS.Core.Streams;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -739,7 +739,14 @@ namespace ModelPropertyChecker
                 LOD x = new LOD();
                 var resolution = x.loadFromMLOD(reader);
                 x.resolution = resolution;
-                lods.Add(resolution, x);
+
+                if (lods.ContainsKey(x.resolution))
+                {
+                    x.propertyExceptions.Add(new PropertyException("<Model Loader>", "Duplicate LOD. This lod is " + x.resolution.ToString()));
+                    lods.Add(-resolution, x);
+                }
+                else
+                    lods.Add(resolution, x);
             }
 
         }

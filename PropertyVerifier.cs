@@ -307,13 +307,19 @@ namespace ModelPropertyChecker
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
-                            "treehard", //#TODO order alphabetically and make sure we got all of them
+
+                            //Trees
+                            "treehard",
                             "treesoft",
                             "bushhard",
                             "bushsoft",
                             "forest",
+
+                            //houses
                             "house",
                             "church",
+
+
                             "road",
                             "thing",
                             "land_decal",
@@ -326,7 +332,9 @@ namespace ModelPropertyChecker
                             "vehicle",
                             "breakablehouseanimated",
                             "pond",
-                            "man"
+                            "man",
+                            "none",
+                            "building"
                         })
                 }
             },
@@ -432,44 +440,50 @@ namespace ModelPropertyChecker
                     new PropVerify_IsEnum(
                         new HashSet<string> 
                         {
-
-
-
-                            "building", //#TODO order in some way and make sure we got all of them
-                            "bunker",
+                            "tree",
+                            "small tree",
                             "bush",
-                            "busstop",	
-                            "chapel",	
-                            "church",	
-                            "cross",	
-                            "fence",	
-                            "fortress",	
-                            "fountain",	
-                            "fuelstation",	
-                            "hide",	
-                            "hospital",	
-                            "house",	
-                            "lighthouse",	
+                            "building",
+                            "house",
+                            "forest border",
+                            "forest triangle",
+                            "forest square",
+                            "church",
+                            "chapel",
+                            "cross",
+                            "rock",
+                            "bunker",
+                            "fortress",
+                            "fountain",
+                            "view-tower",
+                            "lighthouse",
+                            "quay",
+                            "fuelstation",
+                            "hospital",
+                            "fence",
+                            "wall",
+                            "hide",
+                            "busstop",
+                            "road",
+                            "forest",
+                            "transmitter",
+                            "stack",
+                            "ruin",
+                            "tourism",
+                            "watertower",
+                            "track",
                             "main road",
+                            "rocks",
                             "power lines",
+                            "railway",
                             "powersolar",
                             "powerwave",
-                            "powerwind",	
-                            "quay",	
-                            "railway",	
-                            "road",	
-                            "rock",	
-                            "ruin",	
-                            "shipwreck",	
-                            "small tree",
-                            "stack",	
-                            "tourism",	
-                            "track",	
-                            "transmitter",	
-                            "tree",	
-                            "view-tower",	
-                            "wall",	
-                            "watertower",
+                            "powerwind",
+                            "shipwreck",
+                            "trail",
+                            "forest_lod1",
+                            "forest_lod2",
+                            "town_lod1" //List as of version 1.88
                         })
                 }
             },
