@@ -14,6 +14,7 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="5"/>
             <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <ListView Grid.Row="0" ItemsSource="{Binding Path=properties, PresentationTraceSources.TraceLevel=High, UpdateSourceTrigger=PropertyChanged}">
@@ -65,5 +66,22 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <ListBox Grid.Row="3" ItemsSource="{Binding Path=selections, PresentationTraceSources.TraceLevel=High, UpdateSourceTrigger=PropertyChanged}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition SharedSizeGroup="Key" />
+                            <ColumnDefinition SharedSizeGroup="Name" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Margin="2" Text="{Binding Key}" Grid.Column="0"/>
+                        <TextBlock Margin="2" Text="{Binding Value[0]}" Grid.Column="1"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+
     </Grid>
 </UserControl>

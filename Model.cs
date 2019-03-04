@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
+using BIS.Core.Math;
 
 namespace ModelPropertyChecker
 {
@@ -164,6 +165,7 @@ namespace ModelPropertyChecker
         public LODResolution resolution { get; set; } = 0;
         public List<PropertyException> propertyExceptions { get; set; } = new List<PropertyException>();//Set by PropertyVerifier
 
+        public Dictionary<string, List<Vector3P>> selections { get; set; } = new Dictionary<string, List<Vector3P>>();
 
         public int exceptionCount
         {
@@ -205,7 +207,7 @@ namespace ModelPropertyChecker
 
 
 
-        public void loadFromODOL(BinaryReaderEx reader)
+        public void loadFromODOL(BinaryReaderEx reader, bool readPoints = false)
         {
             var numProxies = reader.ReadUInt32();
             for (int i = 0; i < numProxies; i++)
@@ -313,6 +315,8 @@ namespace ModelPropertyChecker
 
             }
 
+
+            var tempSelections = new Dictionary<string, List<UInt32>>();
             var numSelections = reader.ReadUInt32();
             for (int i = 0; i < numSelections; i++)
             {
@@ -338,7 +342,7 @@ namespace ModelPropertyChecker
                 {
                     var b = reader.ReadByte();
                     var expectedDataSize = (uint) (nElements * 4);
-                    var stream = reader.ReadCompressed(expectedDataSize, b==2);
+                    var stream = reader.ReadCompressed(expectedDataSize, b == 2);
                 }
 
                 nElements = reader.ReadInt32(); //vertices
@@ -347,8 +351,17 @@ namespace ModelPropertyChecker
                     var b = reader.ReadByte();
                     var expectedDataSize = (uint) (nElements * 4);
                     var stream = reader.ReadCompressed(expectedDataSize, b == 2);
-                }
+                    if (readPoints)
+                    {
+                        var streamB = new BinaryReaderEx(new MemoryStream(stream));
 
+                        List<UInt32> pointList = new List<UInt32>(nElements);
+                        for (int i2 = 0; i2 < nElements; i2++)
+                            pointList.Add(streamB.ReadUInt32());
+                        tempSelections.Add(selectionName, pointList);
+                    }
+
+                }
 
                 nElements = reader.ReadInt32();//weights
                 if (nElements != 0)
@@ -381,65 +394,89 @@ namespace ModelPropertyChecker
             }
 
             reader.BaseStream.Seek(13, SeekOrigin.Current);
-            var stuff = reader.ReadUInt32();
-            reader.BaseStream.Seek(stuff, SeekOrigin.Current);
 
-            /*
-
-            var numPoints = reader.ReadUInt32();
-            reader.ReadByte();
-            if (numPoints != 0)
+            var stuff = reader.ReadUInt32(); //vertex table size, can jump directly to end
+            if (!readPoints)
             {
-                throw new NotImplementedException();
-            }
-
-
-            reader.BaseStream.Seek(16, SeekOrigin.Current); //uv limits
-
-
-            var numUVs = reader.ReadUInt32();
-            reader.ReadByte();
-            if (numUVs != 0)
+                reader.BaseStream.Seek(stuff, SeekOrigin.Current);
+            } else
             {
+
+                var numPoints = reader.ReadUInt32();
+                if (numPoints != 0)
+                {
+                    var b = reader.ReadByte();
+                    var expectedDataSize = (uint)numPoints*2;
+                    var stream = reader.ReadCompressed(expectedDataSize);// , b == 2
+                }
+
+               reader.BaseStream.Seek(16, SeekOrigin.Current); //uv limits
+
+               var numUVs = reader.ReadUInt32()-1;
+               reader.ReadByte();
+               if (numUVs != 0)
+               {
+                   //reader.ReadByte();
+                   reader.BaseStream.Seek(4*numUVs, SeekOrigin.Current); //uv limits
+               }
+
+               var secondUV = reader.ReadUInt32()-1;
+
+               if (secondUV != 0)
+               {
+                   throw new NotImplementedException();
+               }
+
+               var numPoints2 = reader.ReadUInt32();
+               if (numPoints2 != 0)
+               {
+                   var b = reader.ReadByte();
+                   var expectedDataSize = (uint)numPoints2 * (3 * 4);
+                   var stream = reader.ReadCompressed(expectedDataSize, b == 2);
+
+                   var streamB = new BinaryReaderEx(new MemoryStream(stream));
+
+                   var array = new Vector3P[numPoints2];
+                   for (int i2 = 0; i2 < numPoints2; i2++)
+                       array[i2] = new Vector3P(streamB.ReadSingle(), streamB.ReadSingle(), streamB.ReadSingle());
+
+
+                   foreach (KeyValuePair<string, List<UInt32>> entry in tempSelections)
+                   {
+                       var selectionPoints = new List<Vector3P>(entry.Value.Count);
+
+                        foreach (UInt32 pointIndex in entry.Value)
+                        {
+                            selectionPoints.Add(array[pointIndex]);
+                        }
+
+
+                       selections.Add(entry.Key, selectionPoints);
+                   }
+
+
+               }
+                /*
+                var numNormals = reader.ReadUInt32();
                 reader.ReadByte();
-                reader.BaseStream.Seek(4*numUVs, SeekOrigin.Current); //uv limits
+                if (numNormals != 0)
+                    reader.ReadByte();
+                for (int i = 0; i < numNormals; i++)
+                {
+                    reader.BaseStream.Seek(4 * numNormals, SeekOrigin.Current);
+                }
+
+
+                reader.BaseStream.Seek(4, SeekOrigin.Current);
+                var numVertBone = reader.ReadUInt32();
+                if (numVertBone != 0)
+                    reader.ReadByte();
+
+                for (int i = 0; i < numVertBone; i++)
+                {
+                    reader.BaseStream.Seek(4 +(4*2), SeekOrigin.Current);
+                }*/
             }
-
-            var secondUV = reader.ReadUInt32();
-
-            if (secondUV != 0)
-            {
-                throw new NotImplementedException();
-            }
-
-            var numPoints2 = reader.ReadUInt32();
-            if (numPoints2 != 0)
-                reader.ReadByte();
-            for (int i = 0; i < numPoints2; i++)
-            {
-                reader.BaseStream.Seek((3*4 + 1)*numPoints2, SeekOrigin.Current);
-            }
-
-            var numNormals = reader.ReadUInt32();
-            reader.ReadByte();
-            if (numNormals != 0)
-                reader.ReadByte();
-            for (int i = 0; i < numNormals; i++)
-            {
-                reader.BaseStream.Seek(4 * numNormals, SeekOrigin.Current);
-            }
-
-
-            reader.BaseStream.Seek(4, SeekOrigin.Current);
-            var numVertBone = reader.ReadUInt32();
-            if (numVertBone != 0)
-                reader.ReadByte();
-
-            for (int i = 0; i < numVertBone; i++)
-            {
-                reader.BaseStream.Seek(4 +(4*2), SeekOrigin.Current);
-            }*/
-
 
             reader.BaseStream.Seek(4 + 4 + 1, SeekOrigin.Current);
 
@@ -459,6 +496,18 @@ namespace ModelPropertyChecker
             var numNormals = reader.ReadUInt32();
             var numFaces = reader.ReadUInt32();
             reader.ReadUInt32();
+
+            List<Vector3P> pointList = new List<Vector3P>((int)numPoints);
+
+            for (int i = 0; i < numPoints; i++)
+            {
+                var x = reader.ReadSingle();
+                var y = reader.ReadSingle();
+                var z = reader.ReadSingle();
+                var flags = reader.ReadUInt32();
+                pointList.Add(new Vector3P(x,y,z));
+            }
+
             reader.BaseStream.Seek(numPoints * 16, SeekOrigin.Current);
             reader.BaseStream.Seek(numNormals * 4 * 3, SeekOrigin.Current);
 
@@ -494,6 +543,23 @@ namespace ModelPropertyChecker
                         properties.Add(key.ToLower(), new Property(value,valuePos)); //#TODO maybe we also want to keep a version with original casing?
                 } else
                 {
+                    if (!tagName.StartsWith("#")) //It's a selection
+                    {
+                        var curPos = reader.BaseStream.Position;
+
+                        var points = new List<Vector3P>();
+
+                        for (int i = 0; i < numPoints; i++) //Find the first point
+                        {
+                            if (reader.ReadBoolean())
+                            {
+                                points.Add(pointList[i]);
+                            }
+                        }
+                        selections.Add(tagName, points);
+                        reader.BaseStream.Seek(curPos+tagLen, SeekOrigin.Begin);
+                    }
+
                     reader.BaseStream.Seek(tagLen, SeekOrigin.Current);
                 }
             } while (tagName != "#EndOfFile#"); //tagName != "" && 
@@ -678,7 +744,6 @@ namespace ModelPropertyChecker
             reader.BaseStream.Seek(16, SeekOrigin.Current);
             reader.BaseStream.Seek(4, SeekOrigin.Current); //#TODO only if >72
 
-
             reader.BaseStream.Seek(14 
                                    + 4 + 1, SeekOrigin.Current); //#TODO only if >72
 
@@ -693,9 +758,6 @@ namespace ModelPropertyChecker
 
             reader.BaseStream.Seek(12*numLods, SeekOrigin.Current);
 
-
-
-
             if (reader.ReadByte() != 0)
             {
                 skipAnimations(reader);
@@ -708,16 +770,13 @@ namespace ModelPropertyChecker
                 lodOffs[i] = reader.ReadUInt32();
             }
 
-
-
-
             reader.BaseStream.Seek(numLods, SeekOrigin.Current);
 
             for (int i = 0; i < numLods; i++)
             {
                 reader.BaseStream.Seek(lodOffs[i], SeekOrigin.Begin);
                 LOD x = new LOD();
-                x.loadFromODOL(reader);
+                x.loadFromODOL(reader, Math.Abs(lodResolutions[i] - 1e15f) < 0.1);
                 x.resolution = lodResolutions[i];
 
                 if (lods.ContainsKey(x.resolution))
