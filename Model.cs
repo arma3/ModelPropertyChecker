@@ -212,7 +212,9 @@ namespace ModelPropertyChecker
             var numProxies = reader.ReadUInt32();
             for (int i = 0; i < numProxies; i++)
             {
-                while (reader.ReadByte() != 0) ; //skip name
+                var proxyName = reader.ReadAsciiz();
+
+
                 reader.BaseStream.Seek(
                     4 * 3 * 4 //Transform xyzn 4 vectors of 3 floats each
                     + 4
@@ -406,8 +408,11 @@ namespace ModelPropertyChecker
                 if (numPoints != 0)
                 {
                     var b = reader.ReadByte();
-                    var expectedDataSize = (uint)numPoints*2;
-                    var stream = reader.ReadCompressed(expectedDataSize);// , b == 2
+                    var expectedDataSize = (uint)numPoints*4;
+                    if (b == 1)
+                        reader.ReadUInt32();
+                    else
+                        reader.ReadCompressed(expectedDataSize, b == 2);
                 }
 
                reader.BaseStream.Seek(16, SeekOrigin.Current); //uv limits
@@ -416,6 +421,7 @@ namespace ModelPropertyChecker
                reader.ReadByte();
                if (numUVs != 0)
                {
+                   numUVs = 1;
                    //reader.ReadByte();
                    reader.BaseStream.Seek(4*numUVs, SeekOrigin.Current); //uv limits
                }
